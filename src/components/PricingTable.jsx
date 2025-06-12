@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function PricingTable() {
+export const PricingTable = () => {
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
       {/* Free Tier */}

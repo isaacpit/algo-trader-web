@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDebug } from '../context/DebugContext';
 
-const GoogleSignIn = ({ onSuccess, onError }) => {
+export const GoogleSignIn = ({ onSuccess, onError }) => {
   const { addDebugLog } = useDebug();
 
   const handleGoogleSignIn = async () => {
@@ -92,6 +92,4 @@ const GoogleSignIn = ({ onSuccess, onError }) => {
       </span>
     </button>
   );
-};
-
-export default GoogleSignIn; 
+}; 

@@ -24,7 +24,7 @@ ChartJS.register(
   Filler
 );
 
-const PerformanceChart = ({ 
+export const PerformanceChart = ({ 
   data = {
     labels: [],
     datasets: []
@@ -135,6 +135,4 @@ const PerformanceChart = ({
       <Line data={data} options={options} />
     </div>
   );
-};
-
-export default PerformanceChart; 
+}; 

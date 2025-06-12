@@ -1,7 +1,7 @@
 import React from "react";
 import { FaTwitter, FaLinkedin, FaGithub, FaDiscord } from "react-icons/fa";
 
-export default function Footer() {
+export const Footer = () => {
   return (
     <footer className="bg-gray-900 text-gray-300">
       <div className="max-w-7xl mx-auto px-6 py-12">
@@ -71,4 +71,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+};

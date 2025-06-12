@@ -1,7 +1,7 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 
-const TechnicalLayout = ({ data }) => {
+export const TechnicalLayout = ({ data }) => {
   return (
     <div className="bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
       {/* Laptop Top Bar */}
@@ -245,6 +245,4 @@ const TechnicalLayout = ({ data }) => {
       </div>
     </div>
   );
-};
-
-export default TechnicalLayout; 
+}; 

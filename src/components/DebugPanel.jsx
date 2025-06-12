@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDebug } from '../context/DebugContext';
 
-const DebugPanel = () => {
+export const DebugPanel = () => {
   const { isDebugMode, debugLogs, clearDebugLogs, toggleDebugMode } = useDebug();
 
   if (!isDebugMode) return null;
@@ -54,6 +54,4 @@ const DebugPanel = () => {
       </div>
     </div>
   );
-};
-
-export default DebugPanel; 
+}; 

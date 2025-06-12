@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { FaBars, FaTimes } from "react-icons/fa";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { FaBars, FaTimes, FaUser, FaSignOutAlt } from "react-icons/fa";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { useDebug } from '../context/DebugContext';
+import { ROUTES } from '../constants';
 
-export default function Navbar() {
+export const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isV2, setIsV2] = useState(true);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const profileMenuRef = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
     const { isDarkMode, toggleTheme } = useTheme();
     const { isDebugMode, toggleDebugMode } = useDebug();
 
@@ -21,25 +26,74 @@ export default function Navbar() {
     }, []);
 
     useEffect(() => {
-        const user = localStorage.getItem('user');
-        setIsAuthenticated(!!user);
+        const checkAuth = () => {
+            const user = localStorage.getItem('user');
+            setIsAuthenticated(!!user);
+        };
+
+        // Check auth state on mount
+        checkAuth();
+
+        // Listen for auth state changes
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'user') {
+                checkAuth();
+            }
+        });
+
+        // Listen for custom auth event
+        window.addEventListener('authStateChanged', checkAuth);
+
+        return () => {
+            window.removeEventListener('storage', checkAuth);
+            window.removeEventListener('authStateChanged', checkAuth);
+        };
     }, []);
+
+    useEffect(() => {
+        setIsV2(location.pathname === ROUTES.V2 || location.pathname === ROUTES.HOME);
+    }, [location.pathname]);
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
     const handleLogoClick = (e) => {
         e.preventDefault();
-        navigate('/');
+        navigate(ROUTES.HOME);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleAuthButtonClick = () => {
         if (isAuthenticated) {
-            navigate('/dashboard');
+            navigate(ROUTES.DASHBOARD);
         } else {
-            navigate('/signup');
+            navigate(ROUTES.SIGNUP);
         }
     };
+
+    const toggleVersion = () => {
+        setIsV2(!isV2);
+        navigate(isV2 ? ROUTES.V1 : ROUTES.V2);
+    };
+
+    const handleSignOut = () => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('access_token');
+        window.dispatchEvent(new Event('authStateChanged'));
+        navigate('/');
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+                setShowProfileMenu(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     return (
         <nav
@@ -55,11 +109,14 @@ export default function Navbar() {
                         <Link
                             to="/"
                             onClick={handleLogoClick}
-                            className="text-2xl font-bold text-gray-900 dark:text-white"
+                            className="flex items-center text-2xl font-bold text-gray-900 dark:text-white"
                         >
+                            <span className="flex items-center justify-center w-8 h-8 mr-2 bg-indigo-600 text-white rounded-lg font-bold">
+                                A
+                            </span>
                             AlgoTrader
                         </Link>
-                    </div>
+                </div>
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-8">
@@ -69,19 +126,18 @@ export default function Navbar() {
                         >
                             Home
                         </Link>
-                        <Link
-                            to="/features"
-                            className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                        >
-                            Features
-                        </Link>
-                        <Link
-                            to="/pricing"
-                            className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                        >
-                            Pricing
-                        </Link>
                         <div className="flex items-center space-x-4">
+                            <button
+                                onClick={toggleVersion}
+                                className={`p-2 rounded-md ${
+                                    isV2
+                                        ? 'bg-indigo-600 text-white'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                }`}
+                                title="Toggle v1/v2"
+                            >
+                                {isV2 ? 'v2' : 'v1'}
+                            </button>
                             <button
                                 onClick={toggleDebugMode}
                                 className={`p-2 rounded-md ${
@@ -143,13 +199,50 @@ export default function Navbar() {
                             >
                                 {isAuthenticated ? 'Dashboard' : 'Get Started'}
                             </button>
+                            {isAuthenticated && (
+                                <div className="relative" ref={profileMenuRef}>
+                                    <button
+                                        onClick={() => setShowProfileMenu(!showProfileMenu)}
+                                        className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                        title="Profile"
+                                    >
+                                        <FaUser className="h-5 w-5" />
+                                    </button>
+                                    {showProfileMenu && (
+                                        <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                            <div className="py-1" role="menu" aria-orientation="vertical">
+                                                <Link
+                                                    to="/profile"
+                                                    className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                    role="menuitem"
+                                                    onClick={() => setShowProfileMenu(false)}
+                                                >
+                                                    <FaUser className="h-4 w-4 mr-2" />
+                                                    Profile
+                                                </Link>
+                    <button
+                                                    onClick={() => {
+                                                        handleSignOut();
+                                                        setShowProfileMenu(false);
+                                                    }}
+                                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                    role="menuitem"
+                                                >
+                                                    <FaSignOutAlt className="h-4 w-4 mr-2" />
+                                                    Sign Out
+                    </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                    </div>
+                </div>
 
-                    {/* Mobile menu button */}
+                {/* Mobile menu button */}
                     <div className="md:hidden flex items-center">
-                        <button
-                            onClick={toggleMenu}
+                <button
+                    onClick={toggleMenu}
                             className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white focus:outline-none"
                         >
                             {isOpen ? (
@@ -157,7 +250,7 @@ export default function Navbar() {
                             ) : (
                                 <FaBars className="h-6 w-6" />
                             )}
-                        </button>
+                </button>
                     </div>
                 </div>
             </div>
@@ -172,18 +265,16 @@ export default function Navbar() {
                         >
                             Home
                         </Link>
-                        <Link
-                            to="/features"
-                            className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-800/80 transition-colors"
+                        <button
+                            onClick={toggleVersion}
+                            className={`w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                                isV2
+                                    ? 'bg-indigo-600 text-white'
+                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                            }`}
                         >
-                            Features
-                        </Link>
-                        <Link
-                            to="/pricing"
-                            className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-800/80 transition-colors"
-                        >
-                            Pricing
-                        </Link>
+                            {isV2 ? 'v2' : 'v1'}
+                        </button>
                         <button
                             onClick={handleAuthButtonClick}
                             className={`w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
@@ -194,120 +285,25 @@ export default function Navbar() {
                         >
                             {isAuthenticated ? 'Dashboard' : 'Get Started'}
                         </button>
+                        {isAuthenticated && (
+                            <>
+                                <Link
+                                    to="/profile"
+                                    className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-800/80 transition-colors"
+                                >
+                                    Profile
+                                </Link>
+                <button
+                                    onClick={handleSignOut}
+                                    className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-800/80 transition-colors"
+                >
+                                    Sign Out
+                </button>
+                            </>
+                        )}
                     </div>
-                </div>
+            </div>
             )}
         </nav>
     );
 }
-
-
-// import React, {useState, useEffect} from "react";
-// import {FaBars, FaTimes} from "react-icons/fa";
-//
-// export default function Navbar() {
-//     const [isOpen, setIsOpen] = useState(false);
-//     const [scrolled, setScrolled] = useState(false);
-//
-//     // Add shadow and background change on scroll
-//     useEffect(() => {
-//         const handleScroll = () => {
-//             setScrolled(window.scrollY > 20);
-//         };
-//         window.addEventListener("scroll", handleScroll);
-//         return () => window.removeEventListener("scroll", handleScroll);
-//     }, []);
-//
-//     const toggleMenu = () => setIsOpen(!isOpen);
-//
-//     return (
-//         <nav
-//             className={`
-//         fixed w-full z-50 transition-all duration-300
-//         ${
-//                 scrolled
-//                     ? "bg-white/80 backdrop-blur-md shadow-md"
-//                     : "bg-white/20 backdrop-blur-sm"
-//             }
-//   `}
-//         >
-//             <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-//                 <div
-//                     className={`
-//             text-2xl font-extrabold cursor-pointer
-//             transition-colors duration-300
-//             ${scrolled ? "text-indigo-700" : "text-white"}
-//           `}
-//                 >
-//                     Algo Trader
-//                 </div>
-//
-//                 {/* Desktop Links */}
-//                 <div
-//                     className={`
-//                     hidden md:flex space-x-10 font-medium text-sm
-//                         ${scrolled ? "text-gray-700" : "text-indigo-900"}
-//                     `}
-//                 >
-//                     {["Features", "Pricing", "Backtesting"].map((item) => (
-//                         <a
-//                             key={item}
-//                             href={`#${item.toLowerCase()}`}
-//                             className="relative group py-1 hover:text-indigo-600 transition-colors duration-300"
-//                         >
-//                             {item}
-//                             <span
-//                                 className="absolute left-0 -bottom-1 w-0 group-hover:w-full h-0.5 bg-indigo-600 transition-all duration-300"></span>
-//                         </a>
-//                     ))}
-//                     <button
-//                         className={`
-//               px-5 py-2 rounded-full font-semibold text-sm
-//               transition-colors duration-300
-//               ${scrolled ? "bg-indigo-600 text-white hover:bg-indigo-700" : "bg-white text-indigo-700 hover:bg-indigo-100"}
-//             `}
-//                     >
-//                         Get Started
-//                     </button>
-//                 </div>
-//
-//                 {/* Mobile menu button */}
-//                 <button
-//                     className={`md:hidden text-2xl focus:outline-none ${
-//                         scrolled ? "text-gray-700" : "text-indigo-900"
-//                     }`}
-//                     onClick={toggleMenu}
-//                     aria-label="Toggle menu"
-//                 >
-//                     {isOpen ? <FaTimes/> : <FaBars/>}
-//                 </button>
-//             </div>
-//
-//             {/* Mobile menu */}
-//             <div
-//                 className={`
-//           md:hidden bg-white/95 backdrop-blur-md shadow-lg px-6 py-6 space-y-6 font-medium text-center transition-transform duration-300 origin-top
-//           ${isOpen ? "scale-y-100" : "scale-y-0 pointer-events-none"}
-//         `}
-//                 style={{transformOrigin: "top"}}
-//             >
-//                 {["Features", "Pricing", "Backtesting"].map((item) => (
-//                     <a
-//                         key={item}
-//                         href={`#${item.toLowerCase()}`}
-//                         className="block py-2 text-indigo-700 hover:underline"
-//                         onClick={() => setIsOpen(false)}
-//                     >
-//                         {item}
-//                     </a>
-//                 ))}
-//                 <button
-//                     className="w-full bg-indigo-600 text-white rounded-full px-4 py-2 font-semibold hover:bg-indigo-700 transition"
-//                     onClick={() => setIsOpen(false)}
-//                 >
-//                     Get Started
-//                 </button>
-//             </div>
-//         </nav>
-//     );
-// }

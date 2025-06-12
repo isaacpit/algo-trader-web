@@ -48,7 +48,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function ChartDemo() {
+export const ChartDemo = () => {
   return (
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">

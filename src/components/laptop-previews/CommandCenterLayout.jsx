@@ -1,7 +1,7 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 
-const CommandCenterLayout = ({ data }) => {
+export const CommandCenterLayout = ({ data }) => {
   return (
     <div className="bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
       {/* Laptop Top Bar */}
@@ -169,6 +169,4 @@ const CommandCenterLayout = ({ data }) => {
       </div>
     </div>
   );
-};
-
-export default CommandCenterLayout; 
+}; 

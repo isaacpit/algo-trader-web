@@ -1,8 +1,8 @@
 import React from "react";
-import Navbar from "../../components/Navbar";
-import Hero from "../../components/v2/Hero";
-import FeaturesIcons from "../../components/FeaturesIcons";
-import Footer from "../../components/Footer";
+// import { Navbar } from "../../components/Navbar"; // Removed duplicate Navbar
+import { Hero } from "../../components/v2/Hero";
+import { FeaturesIcons } from "../../components/FeaturesIcons";
+import { Footer } from "../../components/Footer";
 
 const features = [
   { name: "Unlimited Backtests", free: true, premium: true },
@@ -16,12 +16,12 @@ const features = [
   { name: "Community Access", free: true, premium: true },
 ];
 
-export default function LandingPage() {
+export const LandingPageV2 = () => {
   return (
     <div className="relative bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:via-indigo-900 dark:to-gray-900 text-gray-900 dark:text-white min-h-screen">
       <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20"></div>
       <div className="relative z-10">
-        <Navbar />
+        {/* <Navbar /> Removed duplicate Navbar */}
         <div className="pt-20">
           <Hero />
           <FeaturesIcons />
@@ -93,4 +93,4 @@ export default function LandingPage() {
       </div>
     </div>
   );
-} 
+}; 

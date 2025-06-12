@@ -28,7 +28,7 @@ ChartJS.register(
 );
 
 // Static chart data with highly volatile, irregular movements
-const chartData = {
+const defaultChartData = {
   labels: Array(50).fill(''),
   datasets: [
     {
@@ -91,7 +91,9 @@ const tradeLog = [
   { symbol: 'NVDA 400C', entry: '12:05', exit: '13:00', profit: 200 },
 ];
 
-const ModernLayout = ({ data }) => {
+export const ModernLayout = ({ data = {} }) => {
+  const chartData = data?.chartData || defaultChartData;
+  
   const rsiData = data?.rsiData || {
     labels: Array(20).fill(''),
     datasets: [{
@@ -246,52 +248,7 @@ const ModernLayout = ({ data }) => {
             {/* Main Chart with Overlays - Increased height to 2/3 */}
             <div className="relative h-[calc(100%-4rem)] mb-0.5">
               <Line
-                data={{
-                  ...data.chartData,
-                  datasets: [
-                    ...data.chartData.datasets,
-                    {
-                      label: 'Market Average',
-                      data: data.benchmarkData,
-                      borderColor: 'rgba(255, 255, 255, 0.15)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                      fill: true,
-                      tension: 0.4
-                    },
-                    {
-                      label: 'Previous Period',
-                      data: data.chartData.datasets[0].data.map(d => d * 0.9),
-                      borderColor: 'rgba(255, 255, 255, 0.08)',
-                      borderDash: [5, 5],
-                      fill: false,
-                      tension: 0.4
-                    },
-                    {
-                      label: 'RSI Signal',
-                      data: data.chartData.datasets[0].data.map((d, i) => 
-                        i % 8 === 0 ? d * 1.02 : null
-                      ),
-                      borderColor: 'rgba(16, 185, 129, 0.6)',
-                      backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                      pointRadius: 4,
-                      pointStyle: 'triangle',
-                      pointRotation: 0,
-                      showLine: false
-                    },
-                    {
-                      label: 'MACD Signal',
-                      data: data.chartData.datasets[0].data.map((d, i) => 
-                        i % 12 === 0 ? d * 0.98 : null
-                      ),
-                      borderColor: 'rgba(99, 102, 241, 0.6)',
-                      backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                      pointRadius: 4,
-                      pointStyle: 'triangle',
-                      pointRotation: 180,
-                      showLine: false
-                    }
-                  ]
-                }}
+                data={chartData}
                 options={lineChartOptions}
               />
               {/* Trade Connection Lines */}
@@ -425,6 +382,4 @@ const ModernLayout = ({ data }) => {
       </div>
     </div>
   );
-};
-
-export default ModernLayout; 
+}; 

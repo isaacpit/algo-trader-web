@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useDebug } from '../context/DebugContext';
-import PerformanceChart from '../components/charts/PerformanceChart';
+import { PerformanceChart } from '../components/charts/PerformanceChart';
 
-const Dashboard = () => {
+export const Dashboard = () => {
     const { addDebugLog } = useDebug();
     const [signals, setSignals] = useState([]);
     const hasLoadedSignals = useRef(false);
@@ -245,5 +245,3 @@ const Dashboard = () => {
         </div>
     );
 };
-
-export default Dashboard;

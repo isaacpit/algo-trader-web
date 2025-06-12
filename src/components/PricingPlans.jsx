@@ -34,7 +34,7 @@ const features = {
   ]
 };
 
-export default function PricingPlans() {
+export const PricingPlans = () => {
   return (
     <div className="grid md:grid-cols-3 gap-8 mt-12 max-w-7xl mx-auto">
       {/* Starter Plan */}

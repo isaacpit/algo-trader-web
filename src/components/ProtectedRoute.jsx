@@ -1,16 +1,14 @@
-import React, { useMemo, useRef } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useDebug } from '../context/DebugContext';
 
-const ProtectedRoute = ({ children }) => {
+export const ProtectedRoute = ({ children }) => {
   const { addDebugLog } = useDebug();
   const location = useLocation();
-  const hasLogged = useRef(false);
   
-  const isAuthenticated = useMemo(() => {
+  const isAuthenticated = () => {
     const user = localStorage.getItem('user');
-    if (!user && !hasLogged.current) {
-      hasLogged.current = true;
+    if (!user) {
       addDebugLog({
         emoji: '🔒',
         title: 'Protected route accessed without authentication',
@@ -19,15 +17,14 @@ const ProtectedRoute = ({ children }) => {
           timestamp: new Date().toISOString()
         },
       });
+      return false;
     }
-    return !!user;
-  }, [location.pathname, addDebugLog]);
+    return true;
+  };
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated()) {
     return <Navigate to="/signup" state={{ from: location }} replace />;
   }
 
   return children;
-};
-
-export default ProtectedRoute; 
+}; 

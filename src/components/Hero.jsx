@@ -217,7 +217,7 @@ const generateStrategyData = () => {
   return { baseData, benchmarkData };
 };
 
-export default function Hero() {
+export const Hero = () => {
   const chartRefs = useRef(backgroundCharts.map(() => null));
   const { baseData, benchmarkData } = generateStrategyData();
 
@@ -355,7 +355,7 @@ export default function Hero() {
           </div>
           <h1 className="text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
             Build. Test. Trade.
-          </h1>
+      </h1>
           <p className="text-2xl mb-8 text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Design sophisticated trading algorithms, backtest them with precision, and optimize your strategy with institutional-grade tools.
           </p>
@@ -525,7 +525,7 @@ export default function Hero() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Run Backtest
-                  </button>
+      </button>
                 </div>
               </div>
 

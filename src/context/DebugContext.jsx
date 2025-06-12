@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
-const DebugContext = createContext();
+export const DebugContext = createContext();
 
 export const useDebug = () => {
   const context = useContext(DebugContext);
@@ -45,6 +45,4 @@ export const DebugProvider = ({ children }) => {
       {children}
     </DebugContext.Provider>
   );
-};
-
-export default DebugContext; 
+}; 

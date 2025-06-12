@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDebug } from '../context/DebugContext';
 
-const OAuthCallback = () => {
+export const OAuthCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { addDebugLog } = useDebug();
@@ -142,15 +142,14 @@ const OAuthCallback = () => {
             data,
           });
           
-          // Store any necessary user data
+          // Store user data in localStorage
           localStorage.setItem('user', JSON.stringify(data.user));
-          addDebugLog({
-            emoji: '💾',
-            title: 'User data stored in localStorage',
-            data: data.user,
-          });
+          localStorage.setItem('access_token', accessToken);
           
-          // Redirect to the dashboard or home page
+          // Dispatch custom event for auth state change
+          window.dispatchEvent(new Event('authStateChanged'));
+          
+          // Redirect to dashboard
           addDebugLog({
             emoji: '🔄',
             title: 'Redirecting to dashboard',
@@ -193,6 +192,4 @@ const OAuthCallback = () => {
       </div>
     </div>
   );
-};
-
-export default OAuthCallback; 
+}; 
