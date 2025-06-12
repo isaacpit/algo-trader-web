@@ -12,6 +12,7 @@ import {
   Filler,
 } from "chart.js";
 import LayoutSelector from '../laptop-previews/LayoutSelector';
+import { Link } from 'react-router-dom';
 
 // Register ChartJS components
 ChartJS.register(
@@ -195,7 +196,6 @@ const chartOptions = {
   },
 };
 
-// Generate profitable strategy data
 const generateStrategyData = () => {
   const length = 100;
   const baseData = [];
@@ -218,9 +218,13 @@ const generateStrategyData = () => {
   return { baseData, benchmarkData };
 };
 
+// Generate initial strategy data outside component
+const initialStrategyData = generateStrategyData();
+
 const Hero = () => {
   const chartRefs = useRef(backgroundCharts.map(() => null));
-  const { baseData, benchmarkData } = generateStrategyData();
+  const [strategyData] = useState(initialStrategyData);
+  const { baseData, benchmarkData } = strategyData;
 
   useEffect(() => {
     const animateCharts = () => {
@@ -248,7 +252,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative text-white py-32 px-6 overflow-hidden">
+    <section className="relative text-gray-900 dark:text-white py-32 px-6 overflow-hidden">
       {/* Background Charts */}
       <div className="absolute inset-0 overflow-hidden">
         {backgroundCharts.map((chart, index) => (
@@ -286,7 +290,7 @@ const Hero = () => {
                     title: {
                       ...chartOptions.plugins.title,
                       text: chart.title,
-                      color: 'rgba(255, 255, 255, 0.15)',
+                      color: 'rgba(0, 0, 0, 0.15)',
                     },
                   },
                   scales: {
@@ -295,15 +299,15 @@ const Hero = () => {
                       title: {
                         ...chartOptions.scales.x.title,
                         text: chart.axisLabels.x,
-                        color: 'rgba(255, 255, 255, 0.1)',
+                        color: 'rgba(0, 0, 0, 0.1)',
                       },
                       grid: {
                         ...chartOptions.scales.x.grid,
-                        color: 'rgba(255, 255, 255, 0.02)',
+                        color: 'rgba(0, 0, 0, 0.02)',
                       },
                       border: {
                         ...chartOptions.scales.x.border,
-                        color: 'rgba(255, 255, 255, 0.08)',
+                        color: 'rgba(0, 0, 0, 0.08)',
                       },
                     },
                     y: {
@@ -311,34 +315,34 @@ const Hero = () => {
                       title: {
                         ...chartOptions.scales.y.title,
                         text: chart.axisLabels.y,
-                        color: 'rgba(255, 255, 255, 0.1)',
+                        color: 'rgba(0, 0, 0, 0.1)',
                       },
                       grid: {
                         ...chartOptions.scales.y.grid,
-                        color: 'rgba(255, 255, 255, 0.02)',
+                        color: 'rgba(0, 0, 0, 0.02)',
                       },
                       border: {
                         ...chartOptions.scales.y.border,
-                        color: 'rgba(255, 255, 255, 0.08)',
+                        color: 'rgba(0, 0, 0, 0.08)',
                       },
                     },
                   },
                 }}
               />
               {/* Metrics Panel */}
-              <div className="absolute top-2 right-2 bg-black/10 backdrop-blur-sm rounded p-2 text-xs font-mono">
+              <div className="absolute top-2 right-2 bg-white/10 dark:bg-black/10 backdrop-blur-sm rounded p-2 text-xs font-mono">
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <div className="text-white/20">CHG</div>
-                    <div className="text-white/40">{chart.metrics.change}</div>
+                    <div className="text-gray-600 dark:text-white/20">CHG</div>
+                    <div className="text-gray-800 dark:text-white/40">{chart.metrics.change}</div>
                   </div>
                   <div>
-                    <div className="text-white/20">VOL</div>
-                    <div className="text-white/40">{chart.metrics.volatility}</div>
+                    <div className="text-gray-600 dark:text-white/20">VOL</div>
+                    <div className="text-gray-800 dark:text-white/40">{chart.metrics.volatility}</div>
                   </div>
                   <div>
-                    <div className="text-white/20">AVG</div>
-                    <div className="text-white/40">{chart.metrics.average}</div>
+                    <div className="text-gray-600 dark:text-white/20">AVG</div>
+                    <div className="text-gray-800 dark:text-white/40">{chart.metrics.average}</div>
                   </div>
                 </div>
               </div>
@@ -350,21 +354,27 @@ const Hero = () => {
       <div className="max-w-6xl mx-auto relative">
         <div className="text-center mb-12">
           <div className="inline-block mb-6">
-            <span className="bg-indigo-500/10 text-indigo-300 px-4 py-2 rounded-full text-sm font-medium">
+            <span className="bg-indigo-100 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 px-4 py-2 rounded-full text-sm font-medium">
               Professional-Grade Trading Platform
             </span>
           </div>
-          <h1 className="text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+          <h1 className="text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
             Build. Test. Trade.
           </h1>
-          <p className="text-2xl mb-8 text-gray-300 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-2xl mb-8 text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Design sophisticated trading algorithms, backtest them with precision, and optimize your strategy with institutional-grade tools.
           </p>
-          <div className="flex gap-4 justify-center">
-            <button className="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105">
-              Start Free Trial
-            </button>
-            <button className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg text-lg font-semibold backdrop-blur-sm transition-all duration-200">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/google-signup"
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 transition-colors duration-200"
+            >
+              Get Started
+            </Link>
+            <button
+              onClick={() => document.getElementById('demo').scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 dark:border-gray-600 text-base font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+            >
               View Demo
             </button>
           </div>
@@ -372,17 +382,17 @@ const Hero = () => {
 
         {/* Stats Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl font-bold text-indigo-400 mb-2">10+</div>
-            <div className="text-gray-300">Years of Historical Data</div>
+          <div className="bg-white/5 dark:bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">10+</div>
+            <div className="text-gray-600 dark:text-gray-300">Years of Historical Data</div>
           </div>
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl font-bold text-indigo-400 mb-2">99.9%</div>
-            <div className="text-gray-300">Backtest Accuracy</div>
+          <div className="bg-white/5 dark:bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">99.9%</div>
+            <div className="text-gray-600 dark:text-gray-300">Backtest Accuracy</div>
           </div>
-          <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
-            <div className="text-3xl font-bold text-indigo-400 mb-2">50K+</div>
-            <div className="text-gray-300">Active Traders</div>
+          <div className="bg-white/5 dark:bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-gray-200 dark:border-white/10">
+            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">50K+</div>
+            <div className="text-gray-600 dark:text-gray-300">Active Traders</div>
           </div>
         </div>
 
@@ -403,8 +413,8 @@ const Hero = () => {
                 {
                   label: 'Benchmark',
                   data: benchmarkData,
-                  borderColor: 'rgba(255, 255, 255, 0.2)',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  borderColor: 'rgba(0, 0, 0, 0.2)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.05)',
                   fill: true,
                   tension: 0.4
                 }
