@@ -1,6 +1,6 @@
 import React from "react";
 import Navbar from "../../components/Navbar";
-import Hero from "../../components/v2/Hero";
+import Hero from "../../components/Hero";
 import FeaturesIcons from "../../components/FeaturesIcons";
 import ChartDemo from "../../components/ChartDemo";
 import PricingTable from "../../components/PricingTable";
