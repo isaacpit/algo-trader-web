@@ -405,110 +405,7 @@ export default function Hero() {
         {/* Platform Preview */}
         <div className="mt-16 relative">
           <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-25"></div>
-          <div className="relative bg-gray-900 rounded-lg p-4">
-            <div className="aspect-video bg-gray-800 rounded-lg flex items-center justify-center overflow-hidden">
-              <div className="w-full h-full relative">
-                {/* Simulated trading interface */}
-                <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-gray-900/80"></div>
-                
-                {/* Window controls */}
-                <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
-                  <div className="flex space-x-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  </div>
-                  <div className="text-gray-400 text-sm">Strategy Performance</div>
-                </div>
-
-                {/* Trading interface content */}
-                <div className="absolute inset-0 p-8 pt-16">
-                  <div className="grid grid-cols-2 gap-4 h-full">
-                    {/* Main chart */}
-                    <div className="bg-gray-900/50 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          <div className="text-green-400 text-sm font-medium">Strategy Performance</div>
-                          <div className="text-2xl font-bold text-white">+15.8%</div>
-                        </div>
-                        <div className="text-gray-400 text-sm">Last 30 days</div>
-                      </div>
-                      <div className="h-[200px]">
-                        <Line
-                          data={{
-                            labels: Array.from({ length: 30 }, (_, i) => i),
-                            datasets: [
-                              {
-                                data: baseData,
-                                borderColor: "#34d399",
-                                borderWidth: 2,
-                                fill: true,
-                                backgroundColor: "rgba(52, 211, 153, 0.1)",
-                                pointBackgroundColor: "#34d399",
-                                pointBorderColor: "#34d399",
-                                pointHoverBackgroundColor: "#34d399",
-                                pointHoverBorderColor: "#34d399",
-                              },
-                            ],
-                          }}
-                          options={staticChartOptions}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Stats panel */}
-                    <div className="grid grid-rows-2 gap-4">
-                      <div className="bg-gray-900/50 rounded-lg p-4">
-                        <div className="text-gray-400 text-sm mb-2">Win Rate</div>
-                        <div className="text-2xl font-bold text-white">68.5%</div>
-                        <div className="text-green-400 text-sm mt-1">↑ 2.3% from last month</div>
-                      </div>
-                      <div className="bg-gray-900/50 rounded-lg p-4">
-                        <div className="text-gray-400 text-sm mb-2">Sharpe Ratio</div>
-                        <div className="text-2xl font-bold text-white">2.4</div>
-                        <div className="text-green-400 text-sm mt-1">Excellent risk-adjusted returns</div>
-                      </div>
-                    </div>
-
-                    {/* Benchmark comparison */}
-                    <div className="col-span-2 bg-gray-900/50 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <div className="text-gray-400 text-sm">Strategy vs Benchmark</div>
-                        <div className="text-green-400 text-sm">Outperforming by 10.3%</div>
-                      </div>
-                      <div className="h-[100px]">
-                        <Line
-                          data={{
-                            labels: Array.from({ length: 30 }, (_, i) => i),
-                            datasets: [
-                              {
-                                data: benchmarkData,
-                                borderColor: "#6366f1",
-                                borderWidth: 2,
-                                fill: true,
-                                backgroundColor: "rgba(99, 102, 241, 0.1)",
-                                pointBackgroundColor: "#6366f1",
-                                pointBorderColor: "#6366f1",
-                                pointHoverBackgroundColor: "#6366f1",
-                                pointHoverBorderColor: "#6366f1",
-                              },
-                            ],
-                          }}
-                          options={staticChartOptions}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Laptop Section Container */}
-        <div className="relative w-full max-w-6xl mx-auto mt-16">
-          {/* Main Laptop Frame */}
-          <div className="relative bg-gray-900 rounded-lg shadow-2xl overflow-hidden z-10">
+          <div className="relative bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
             {/* Laptop Top Bar */}
             <div className="h-8 bg-gray-800 flex items-center px-4">
               <div className="flex space-x-2">
@@ -516,132 +413,229 @@ export default function Hero() {
                 <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
               </div>
+              <div className="text-gray-400 text-sm ml-4">Strategy Performance</div>
             </div>
             
             {/* Laptop Screen Content */}
             <div className="relative aspect-[16/10] bg-gray-900 p-4">
-              {/* Main Chart */}
-              <div className="h-1/2 mb-4 relative">
-                <Line
-                  data={{
-                    labels: Array.from({ length: 100 }, (_, i) => i),
-                    datasets: [
-                      {
-                        label: "Strategy Performance",
-                        data: baseData,
-                        borderColor: "#6366f1",
-                        borderWidth: 2,
-                        fill: true,
-                        backgroundColor: "rgba(99, 102, 241, 0.1)",
-                        tension: 0.4,
-                        pointRadius: 0,
-                        pointHoverRadius: 0,
-                      },
-                      {
-                        label: "Benchmark",
-                        data: benchmarkData,
-                        borderColor: "rgba(255, 255, 255, 0.2)",
-                        borderWidth: 1,
-                        fill: false,
-                        tension: 0.4,
-                        pointRadius: 0,
-                        pointHoverRadius: 0,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        display: false,
-                      },
-                      tooltip: {
-                        enabled: false,
-                      },
-                    },
-                    scales: {
-                      x: {
-                        display: false,
-                        grid: {
+              {/* Main Chart with Parameters */}
+              <div className="h-1/2 mb-4 relative flex gap-4">
+                {/* Chart Section */}
+                <div className="flex-1 relative">
+                  <Line
+                    data={{
+                      labels: Array.from({ length: 100 }, (_, i) => i),
+                      datasets: [
+                        {
+                          label: "Strategy Performance",
+                          data: baseData,
+                          borderColor: "#6366f1",
+                          borderWidth: 2,
+                          fill: true,
+                          backgroundColor: "rgba(99, 102, 241, 0.1)",
+                          tension: 0.4,
+                          pointRadius: 0,
+                          pointHoverRadius: 0,
+                        },
+                        {
+                          label: "Benchmark",
+                          data: benchmarkData,
+                          borderColor: "rgba(255, 255, 255, 0.2)",
+                          borderWidth: 1,
+                          fill: false,
+                          tension: 0.4,
+                          pointRadius: 0,
+                          pointHoverRadius: 0,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
                           display: false,
                         },
-                      },
-                      y: {
-                        display: false,
-                        grid: {
-                          display: false,
+                        tooltip: {
+                          enabled: false,
                         },
                       },
-                    },
-                    elements: {
-                      point: {
-                        radius: 0,
+                      scales: {
+                        x: {
+                          display: false,
+                          grid: {
+                            display: false,
+                          },
+                        },
+                        y: {
+                          display: false,
+                          grid: {
+                            display: false,
+                          },
+                        },
                       },
-                      line: {
-                        tension: 0.4,
+                      elements: {
+                        point: {
+                          radius: 0,
+                        },
+                        line: {
+                          tension: 0.4,
+                        },
                       },
-                    },
-                    animation: {
-                      duration: 0,
-                    },
-                  }}
-                />
+                      animation: {
+                        duration: 0,
+                      },
+                    }}
+                  />
+                  {/* Overlay Metrics */}
+                  <div className="absolute top-2 left-2 flex space-x-4">
+                    <div className="bg-indigo-600/20 backdrop-blur-sm rounded px-2 py-1">
+                      <div className="text-indigo-300 text-xs font-mono">ALPHA</div>
+                      <div className="text-white text-sm font-mono">+0.24</div>
+                    </div>
+                    <div className="bg-green-600/20 backdrop-blur-sm rounded px-2 py-1">
+                      <div className="text-green-300 text-xs font-mono">BETA</div>
+                      <div className="text-white text-sm font-mono">0.82</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Parameters Widget */}
+                <div className="w-64 bg-gray-800/30 backdrop-blur-sm rounded-lg p-3">
+                  <div className="text-gray-400 text-sm mb-3 font-medium">Backtest Parameters</div>
+                  
+                  {/* Time Range Selector */}
+                  <div className="mb-4">
+                    <div className="text-gray-500 text-xs mb-1">Time Range</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button className="bg-indigo-500/20 text-indigo-300 text-xs py-1.5 rounded hover:bg-indigo-500/30 transition-colors">1M</button>
+                      <button className="bg-gray-700/50 text-gray-300 text-xs py-1.5 rounded hover:bg-gray-700/70 transition-colors">3M</button>
+                      <button className="bg-gray-700/50 text-gray-300 text-xs py-1.5 rounded hover:bg-gray-700/70 transition-colors">6M</button>
+                      <button className="bg-gray-700/50 text-gray-300 text-xs py-1.5 rounded hover:bg-gray-700/70 transition-colors">1Y</button>
+                    </div>
+                  </div>
+
+                  {/* Strategy Parameters */}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-gray-500 text-xs mb-1">Lookback Period</div>
+                      <div className="bg-gray-700/50 rounded px-2 py-1.5 text-gray-300 text-xs">14 days</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-xs mb-1">Entry Threshold</div>
+                      <div className="bg-gray-700/50 rounded px-2 py-1.5 text-gray-300 text-xs">0.75</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-xs mb-1">Exit Threshold</div>
+                      <div className="bg-gray-700/50 rounded px-2 py-1.5 text-gray-300 text-xs">0.25</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-500 text-xs mb-1">Position Size</div>
+                      <div className="bg-gray-700/50 rounded px-2 py-1.5 text-gray-300 text-xs">100%</div>
+                    </div>
+                  </div>
+
+                  {/* Run Button */}
+                  <button className="w-full mt-4 bg-indigo-500/20 text-indigo-300 text-xs py-2 rounded hover:bg-indigo-500/30 transition-colors flex items-center justify-center gap-2">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Run Backtest
+                  </button>
+                </div>
               </div>
 
               {/* Metrics Grid */}
-              <div className="grid grid-cols-4 gap-4 h-1/2">
+              <div className="grid grid-cols-4 gap-3 h-1/2">
                 {/* Performance Metrics */}
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">PERF</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">+24.8%</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">YTD</div>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-indigo-500/10 rounded-full -mr-6 -mt-6"></div>
+                  <div className="text-white/20 text-[10px] font-mono mb-0.5 filter blur-[0.5px]">PERF</div>
+                  <div className="text-white/40 text-xs font-mono filter blur-[0.5px]">+24.8%</div>
+                  <div className="text-white/20 text-[10px] font-mono mt-1 filter blur-[0.5px]">YTD</div>
+                  <div className="absolute bottom-0.5 right-0.5 text-white/10 text-[6px] font-mono">ALGO-1</div>
                 </div>
 
                 {/* Volume Metrics */}
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">VOL</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">1.2M</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">24H</div>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-blue-500/10 rounded-full -mr-6 -mt-6"></div>
+                  <div className="text-white/20 text-[10px] font-mono mb-0.5 filter blur-[0.5px]">VOL</div>
+                  <div className="text-white/40 text-xs font-mono filter blur-[0.5px]">1.2M</div>
+                  <div className="text-white/20 text-[10px] font-mono mt-1 filter blur-[0.5px]">24H</div>
+                  <div className="absolute bottom-0.5 right-0.5 text-white/10 text-[6px] font-mono">ALGO-2</div>
                 </div>
 
                 {/* Signal Metrics */}
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">SIG</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">0.78</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">STR</div>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-purple-500/10 rounded-full -mr-6 -mt-6"></div>
+                  <div className="text-white/20 text-[10px] font-mono mb-0.5 filter blur-[0.5px]">SIG</div>
+                  <div className="text-white/40 text-xs font-mono filter blur-[0.5px]">0.78</div>
+                  <div className="text-white/20 text-[10px] font-mono mt-1 filter blur-[0.5px]">STR</div>
+                  <div className="absolute bottom-0.5 right-0.5 text-white/10 text-[6px] font-mono">ALGO-3</div>
                 </div>
 
                 {/* Risk Metrics */}
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">RISK</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">0.32</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">BETA</div>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-pink-500/10 rounded-full -mr-6 -mt-6"></div>
+                  <div className="text-white/20 text-[10px] font-mono mb-0.5 filter blur-[0.5px]">RISK</div>
+                  <div className="text-white/40 text-xs font-mono filter blur-[0.5px]">0.32</div>
+                  <div className="text-white/20 text-[10px] font-mono mt-1 filter blur-[0.5px]">BETA</div>
+                  <div className="absolute bottom-0.5 right-0.5 text-white/10 text-[6px] font-mono">ALGO-4</div>
                 </div>
 
                 {/* Additional Metrics */}
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">ALPHA</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">0.15</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">DAILY</div>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-cyan-500/10 rounded-full -mr-6 -mt-6"></div>
+                  <div className="text-white/20 text-[10px] font-mono mb-0.5 filter blur-[0.5px]">ALPHA</div>
+                  <div className="text-white/40 text-xs font-mono filter blur-[0.5px]">0.15</div>
+                  <div className="text-white/20 text-[10px] font-mono mt-1 filter blur-[0.5px]">DAILY</div>
+                  <div className="absolute bottom-0.5 right-0.5 text-white/10 text-[6px] font-mono">ALGO-5</div>
                 </div>
 
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">SHARPE</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">2.1</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">RATIO</div>
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-500/10 rounded-full -mr-6 -mt-6"></div>
+                  <div className="text-white/20 text-[10px] font-mono mb-0.5 filter blur-[0.5px]">SHARPE</div>
+                  <div className="text-white/40 text-xs font-mono filter blur-[0.5px]">2.1</div>
+                  <div className="text-white/20 text-[10px] font-mono mt-1 filter blur-[0.5px]">RATIO</div>
+                  <div className="absolute bottom-0.5 right-0.5 text-white/10 text-[6px] font-mono">ALGO-6</div>
                 </div>
 
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">DRAWDOWN</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">-8.2%</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">MAX</div>
-                </div>
+                {/* New Styled Metrics Cards */}
+                <div className="col-span-2 bg-gray-900/50 backdrop-blur-sm rounded-lg p-4">
+                  <div className="grid grid-rows-2 gap-4 h-full">
+                    {/* Win Rate Card */}
+                    <div className="bg-gray-800/30 rounded-lg p-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-gray-400 text-sm mb-1">Win Rate</div>
+                          <div className="text-2xl font-bold text-white">68.5%</div>
+                          <div className="text-green-400 text-sm mt-1">↑ 2.3% from last month</div>
+                        </div>
+                        <div className="bg-green-500/10 rounded-full p-2">
+                          <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg p-3">
-                  <div className="text-white/20 text-xs font-mono mb-1 filter blur-[0.5px]">WIN RATE</div>
-                  <div className="text-white/40 text-sm font-mono filter blur-[0.5px]">68%</div>
-                  <div className="text-white/20 text-xs font-mono mt-2 filter blur-[0.5px]">30D</div>
+                    {/* Sharpe Ratio Card */}
+                    <div className="bg-gray-800/30 rounded-lg p-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-gray-400 text-sm mb-1">Sharpe Ratio</div>
+                          <div className="text-2xl font-bold text-white">2.4</div>
+                          <div className="text-green-400 text-sm mt-1">Excellent risk-adjusted returns</div>
+                        </div>
+                        <div className="bg-indigo-500/10 rounded-full p-2">
+                          <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
