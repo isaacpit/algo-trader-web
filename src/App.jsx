@@ -1,43 +1,50 @@
 import React from "react";
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import FeaturesIcons from "./components/FeaturesIcons";
-import ChartDemo from "./components/ChartDemo";
-import PricingTable from "./components/PricingTable";
-import PricingPlans from "./components/PricingPlans";
-import Footer from "./components/Footer";
+import { BrowserRouter as Router, Routes, Route, NavLink } from "react-router-dom";
+import LandingPageV1 from "./pages/v1/LandingPage";
+import LandingPageV2 from "./pages/v2/LandingPage";
 
 function App() {
   return (
-      <div className="bg-white text-gray-800 min-h-screen scroll-smooth">
-          <Navbar/>
-          {/* Add top padding to avoid content behind navbar */}
-          <div className="pt-20">
-              <Hero/>
-              <FeaturesIcons/>
-              <ChartDemo/>
-              <section
-                  id="pricing"
-                  className="py-24 px-6 bg-white text-center max-w-6xl mx-auto"
-              >
-                  <h2 className="text-3xl font-bold mb-12">Choose Your Plan</h2>
-                  <PricingTable/>
-                  <PricingPlans/>
-              </section>
+    <Router>
+      <div className="min-h-screen">
+        {/* Version Switcher */}
+        <div className="fixed bottom-4 right-4 z-50 bg-gray-900/80 backdrop-blur-md rounded-lg shadow-lg p-4">
+          <div className="flex space-x-4">
+            <NavLink
+              to="/v1"
+              className={({ isActive }) =>
+                `px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isActive
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`
+              }
+            >
+              Version 1
+            </NavLink>
+            <NavLink
+              to="/v2"
+              className={({ isActive }) =>
+                `px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isActive
+                    ? "bg-indigo-600 text-white"
+                    : "bg-white/10 text-white hover:bg-white/20"
+                }`
+              }
+            >
+              Version 2
+            </NavLink>
           </div>
-          <Footer/>
+        </div>
+
+        {/* Routes */}
+        <Routes>
+          <Route path="/" element={<LandingPageV2 />} />
+          <Route path="/v1" element={<LandingPageV1 />} />
+          <Route path="/v2" element={<LandingPageV2 />} />
+        </Routes>
       </div>
-      // <div className="bg-white text-gray-800 min-h-screen scroll-smooth">
-      //   <Hero />
-      //   <FeaturesIcons />
-      //   <ChartDemo />
-      //   <section className="py-24 px-6 bg-white text-center max-w-6xl mx-auto">
-      //     <h2 className="text-3xl font-bold mb-12">Choose Your Plan</h2>
-      //     <PricingTable />
-      //     <PricingPlans />
-      //   </section>
-      //   <Footer />
-      // </div>
+    </Router>
   );
 }
 
