@@ -18,7 +18,7 @@ const features = [
 
 export const LandingPageV2 = () => {
   return (
-    <div className="relative bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:via-indigo-900 dark:to-gray-900 text-gray-900 dark:text-white min-h-screen">
+    <div className="relative bg-gradient-to-br from-gray-900 via-indigo-900 to-gray-900 text-white min-h-screen">
       <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20"></div>
       <div className="relative z-10">
         {/* <Navbar /> Removed duplicate Navbar */}
