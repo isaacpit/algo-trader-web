@@ -1,30 +1,27 @@
-import React from 'react';
-import { Line, Bar } from 'react-chartjs-2';
+import React, { useMemo } from 'react';
+import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
-  BarController,
   PointElement,
   LineElement,
-  LineController,
   Title,
   Tooltip,
   Legend,
+  Filler
 } from 'chart.js';
 
+// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
-  BarController,
   PointElement,
   LineElement,
-  LineController,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 // Static chart data with highly volatile, irregular movements
@@ -91,289 +88,444 @@ const tradeLog = [
   { symbol: 'NVDA 400C', entry: '12:05', exit: '13:00', profit: 200 },
 ];
 
-export const ModernLayout = ({ data = {} }) => {
-  const chartData = data?.chartData || defaultChartData;
-  
-  const rsiData = data?.rsiData || {
-    labels: Array(20).fill(''),
-    datasets: [{
-      label: 'RSI',
-      data: Array(20).fill(50),
-      borderColor: 'rgba(16,185,129,0.8)',
-      backgroundColor: 'rgba(16,185,129,0.1)',
-      fill: true,
-      tension: 0.4
-    }]
-  };
+// Custom overlay plugin for trendlines, highlights, and channels
+const overlayPlugin = {
+  id: 'overlay',
+  afterDraw: (chart) => {
+    const ctx = chart.ctx;
+    const overlays = chart.options.plugins.overlay.overlays;
 
-  const volumeData = data?.volumeData || {
-    labels: Array(20).fill(''),
-    datasets: [{
-      label: 'Volume',
-      data: Array(20).fill(0),
-      borderColor: 'rgba(245,158,11,0.8)',
-      backgroundColor: 'rgba(245,158,11,0.1)',
-      fill: true,
-      tension: 0.4
-    }]
-  };
+    overlays.forEach(overlay => {
+      if (overlay.type === 'trendline') {
+        const points = overlay.points.map(index => {
+          const meta = chart.getDatasetMeta(0);
+          return {
+            x: meta.data[index].x,
+            y: meta.data[index].y
+          };
+        });
 
-  const lineChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { 
-        display: true,
-        position: 'top',
-        labels: {
-          color: 'rgba(156,163,175,0.8)',
-          usePointStyle: true,
-          pointStyle: 'circle'
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
         }
-      },
-      tooltip: { enabled: false },
+        ctx.strokeStyle = overlay.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw label if provided
+        if (overlay.label) {
+          const lastPoint = points[points.length - 1];
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+          ctx.font = '10px sans-serif';
+          ctx.fillText(overlay.label, lastPoint.x + 5, lastPoint.y - 5);
+        }
+      } else if (overlay.type === 'highlight') {
+        const meta = chart.getDatasetMeta(0);
+        const startX = meta.data[overlay.start].x;
+        const endX = meta.data[overlay.end].x;
+        const yAxis = chart.scales.y;
+        
+        ctx.fillStyle = overlay.color;
+        ctx.fillRect(startX, yAxis.top, endX - startX, yAxis.bottom - yAxis.top);
+
+        // Draw label and outcome if provided
+        if (overlay.label || overlay.outcome) {
+          const midX = (startX + endX) / 2;
+          const y = yAxis.top + 15;
+          
+          if (overlay.label) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(overlay.label, midX, y);
+          }
+          
+          if (overlay.outcome) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '9px sans-serif';
+            ctx.fillText(overlay.outcome, midX, y + 15);
+          }
+        }
+      } else if (overlay.type === 'channel') {
+        const meta = chart.getDatasetMeta(0);
+        const startX = meta.data[overlay.top[0]].x;
+        const endX = meta.data[overlay.top[1]].x;
+        const yAxis = chart.scales.y;
+        
+        // Draw channel
+        ctx.fillStyle = overlay.color;
+        ctx.fillRect(startX, yAxis.top, endX - startX, yAxis.bottom - yAxis.top);
+
+        // Draw label if provided
+        if (overlay.label) {
+          const midX = (startX + endX) / 2;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(overlay.label, midX, yAxis.top + 15);
+        }
+      }
+    });
+  }
+};
+
+const commonOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false
     },
-    scales: {
-      x: {
-        display: false,
-        grid: {
-          display: false,
-        },
+    tooltip: {
+      mode: 'index',
+      intersect: false,
+      backgroundColor: 'rgba(17, 24, 39, 0.8)',
+      titleColor: '#fff',
+      bodyColor: '#fff',
+      borderColor: 'rgba(99, 102, 241, 0.5)',
+      borderWidth: 1
+    }
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false
       },
-      y: {
-        display: false,
-        grid: {
-          display: false,
-        },
+      ticks: {
+        color: '#9CA3AF'
+      }
+    },
+    y: {
+      grid: {
+        color: 'rgba(75, 85, 99, 0.2)'
       },
-    },
-    elements: {
-      point: { radius: 0 },
-      line: { tension: 0.4 },
-    },
+      ticks: {
+        color: '#9CA3AF'
+      }
+    }
+  }
+};
+
+// Generate chart data with ultra minor variations
+const generateChartData = (chartType) => {
+  const patterns = chartPatterns[chartType];
+  const patternIndex = Math.floor(Math.random() * patterns.length);
+  const pattern = patterns[patternIndex];
+  const baseData = pattern.data;
+  
+  // Generate market data that follows a similar but less volatile pattern
+  const marketData = baseData.map((value, i) => {
+    // Market data follows the same general trend but with less volatility
+    const marketValue = value * 0.8 + (Math.random() - 0.5) * 0.2;
+    return Math.max(0, marketValue);
+  });
+
+  return {
+    data: baseData.map(value => {
+      const variation = (Math.random() - 0.5) * 0.3;
+      return Math.max(0, value + variation);
+    }),
+    marketData: marketData,
+    overlays: pattern.overlays
   };
+};
 
+export const ModernLayout = ({ data }) => {
   return (
-    <div className="bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
-      <div className="relative aspect-[16/10] bg-gray-900 p-3">
-        <div className="grid grid-cols-12 gap-2 h-full">
-          {/* Strategy Controls - Reduced height with new features */}
-          <div className="col-span-2 flex flex-col">
-            {/* Main Controls - Quarter height */}
-            <div className="bg-gray-800/20 rounded-lg p-1.5 mb-2">
-              <div className="space-y-1">
-                <div className="bg-indigo-500/5 rounded p-1 border border-indigo-500/10 group cursor-pointer hover:bg-indigo-500/10 transition-colors">
-                  <div className="text-indigo-200/70 text-xs">Asset</div>
-                  <div className="text-white text-sm">BTC/USD</div>
+    <div className="w-[80%] mx-auto">
+      {/* Apple-style window border */}
+      <div className="bg-gray-900/50 rounded-xl p-4 border border-white/5">
+        {/* Window controls */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
+          <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+          <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
+        </div>
+
+        <div className="grid grid-cols-12 gap-4">
+          {/* Main Chart Area */}
+          <div className="col-span-8 space-y-4">
+            {/* Chart */}
+            <div className="bg-gray-800/30 rounded-lg p-3 border border-white/5">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-white/60 text-xs">Strategy Performance</div>
+                <div className="flex items-center gap-1">
+                  <div className="grid grid-cols-3 gap-1 bg-gray-800/50 rounded p-0.5">
+                    <button className="bg-gray-700/30 text-white/60 text-[10px] py-0.5 px-1.5 rounded hover:bg-gray-700/50 transition-colors">
+                      15min
+                    </button>
+                    <button className="bg-indigo-500/20 text-indigo-400 text-[10px] py-0.5 px-1.5 rounded hover:bg-indigo-500/30 transition-colors">
+                      1h
+                    </button>
+                    <button className="bg-gray-700/30 text-white/60 text-[10px] py-0.5 px-1.5 rounded hover:bg-gray-700/50 transition-colors">
+                      1d
+                    </button>
+                  </div>
                 </div>
-                <div className="bg-blue-500/5 rounded p-1 border border-blue-500/10 group cursor-pointer hover:bg-blue-500/10 transition-colors">
-                  <div className="text-blue-200/70 text-xs">Timeframe</div>
-                  <div className="text-white text-sm">1H</div>
-                </div>
-                <div className="bg-purple-500/5 rounded p-1 border border-purple-500/10 group cursor-pointer hover:bg-purple-500/10 transition-colors">
-                  <div className="text-purple-200/70 text-xs">Strategy</div>
-                  <div className="text-white text-sm">Trend Following</div>
-                </div>
+              </div>
+              <div className="h-[300px]">
+                <Line
+                  data={data}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        display: false
+                      },
+                      tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(17, 24, 39, 0.8)',
+                        titleColor: 'rgba(255, 255, 255, 0.8)',
+                        bodyColor: 'rgba(255, 255, 255, 0.6)',
+                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        borderWidth: 1,
+                        padding: 8,
+                        displayColors: true,
+                        callbacks: {
+                          label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                              label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                              label += context.parsed.y.toFixed(2) + '%';
+                            }
+                            return label;
+                          }
+                        }
+                      }
+                    },
+                    scales: {
+                      x: {
+                        grid: {
+                          color: 'rgba(255, 255, 255, 0.05)',
+                          drawBorder: false
+                        },
+                        ticks: {
+                          color: 'rgba(255, 255, 255, 0.4)',
+                          font: {
+                            size: 10
+                          }
+                        }
+                      },
+                      y: {
+                        grid: {
+                          color: 'rgba(255, 255, 255, 0.05)',
+                          drawBorder: false
+                        },
+                        ticks: {
+                          color: 'rgba(255, 255, 255, 0.4)',
+                          font: {
+                            size: 10
+                          },
+                          callback: function(value) {
+                            return value + '%';
+                          }
+                        }
+                      }
+                    },
+                    interaction: {
+                      mode: 'nearest',
+                      axis: 'x',
+                      intersect: false
+                    }
+                  }}
+                />
               </div>
             </div>
 
-            {/* New Selectable Features */}
-            <div className="bg-gray-800/20 rounded-lg p-1.5 mb-2">
-              <div className="text-gray-400 text-xs mb-1">Quick Actions</div>
-              <div className="space-y-1">
-                <div className="bg-green-500/5 rounded p-1 border border-green-500/10 group cursor-pointer hover:bg-green-500/10 transition-colors">
-                  <div className="text-green-200/70 text-xs">New Trade</div>
-                  <div className="text-white text-sm">+ Add Position</div>
+            {/* New Metrics Grid */}
+            <div className="grid grid-cols-4 gap-4">
+              {/* Market Metrics */}
+              <div className="bg-gray-800/30 rounded-lg p-2 border border-white/5">
+                <div className="text-gray-400 text-xs mb-1">Market Sentiment</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-white/60 text-xs">Bullish</div>
+                  <div className="text-green-400 text-xs">72%</div>
                 </div>
-                <div className="bg-yellow-500/5 rounded p-1 border border-yellow-500/10 group cursor-pointer hover:bg-yellow-500/10 transition-colors">
-                  <div className="text-yellow-200/70 text-xs">Risk Level</div>
-                  <div className="text-white text-sm">Moderate</div>
-                </div>
-                <div className="bg-red-500/5 rounded p-1 border border-red-500/10 group cursor-pointer hover:bg-red-500/10 transition-colors">
-                  <div className="text-red-200/70 text-xs">Stop Loss</div>
-                  <div className="text-white text-sm">-2.5%</div>
+                <div className="mt-1 h-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-500/30 rounded-full" style={{ width: '72%' }}></div>
                 </div>
               </div>
-            </div>
 
-            {/* Strategy Settings */}
-            <div className="bg-gray-800/20 rounded-lg p-1.5">
-              <div className="text-gray-400 text-xs mb-1">Settings</div>
-              <div className="space-y-1">
-                <div className="bg-blue-500/5 rounded p-1 border border-blue-500/10 group cursor-pointer hover:bg-blue-500/10 transition-colors">
-                  <div className="text-blue-200/70 text-xs">Notifications</div>
-                  <div className="text-white text-sm">Enabled</div>
+              <div className="bg-gray-800/30 rounded-lg p-2 border border-white/5">
+                <div className="text-gray-400 text-xs mb-1">Volatility</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-white/60 text-xs">VIX</div>
+                  <div className="text-yellow-400 text-xs">18.5</div>
                 </div>
-                <div className="bg-purple-500/5 rounded p-1 border border-purple-500/10 group cursor-pointer hover:bg-purple-500/10 transition-colors">
-                  <div className="text-purple-200/70 text-xs">Auto Close</div>
-                  <div className="text-white text-sm">Take Profit</div>
+                <div className="mt-1 h-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-yellow-500/30 rounded-full" style={{ width: '45%' }}></div>
                 </div>
-                <div className="bg-indigo-500/5 rounded p-1 border border-indigo-500/10 group cursor-pointer hover:bg-indigo-500/10 transition-colors">
-                  <div className="text-indigo-200/70 text-xs">Backtest</div>
-                  <div className="text-white text-sm">Last 30 Days</div>
+              </div>
+
+              <div className="bg-gray-800/30 rounded-lg p-2 border border-white/5">
+                <div className="text-gray-400 text-xs mb-1">Volume Profile</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-white/60 text-xs">24h</div>
+                  <div className="text-blue-400 text-xs">2.4M</div>
+                </div>
+                <div className="mt-1 h-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500/30 rounded-full" style={{ width: '60%' }}></div>
+                </div>
+              </div>
+
+              <div className="bg-gray-800/30 rounded-lg p-2 border border-white/5">
+                <div className="text-gray-400 text-xs mb-1">Market Depth</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-white/60 text-xs">Bid/Ask</div>
+                  <div className="text-purple-400 text-xs">0.12%</div>
+                </div>
+                <div className="mt-1 h-1 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-500/30 rounded-full" style={{ width: '30%' }}></div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Main Chart and Signals */}
-          <div className="col-span-10 bg-gray-800/20 rounded-lg p-2 flex flex-col">
-            {/* Chart Header - Ultra compact */}
-            <div className="flex justify-between items-center mb-0.5">
-              <div className="text-gray-400 text-sm">Strategy Performance</div>
-              <div className="flex items-center space-x-1">
-                <div className="flex space-x-0.5">
-                  {['1D', '1W', '1M', '1Y'].map((tf, index) => (
-                    <div
-                      key={tf}
-                      className={`px-1 py-0.5 rounded text-xs font-medium cursor-pointer transition-colors ${
-                        index === 0
-                          ? 'bg-indigo-500/10 text-indigo-200/80 border border-indigo-500/10'
-                          : 'bg-gray-700/30 text-gray-300 hover:bg-gray-700/50'
-                      }`}
-                    >
-                      {tf}
+          {/* Right Panel */}
+          <div className="col-span-4 space-y-4">
+            {/* Parameters Widget */}
+            <div className="bg-gray-800/30 rounded-lg p-3 border border-white/5">
+              <div className="text-gray-400 text-xs mb-3">Parameters</div>
+              <div className="space-y-3">
+                {/* Strategy Selection */}
+                <div>
+                  <div className="text-white/40 text-xs mb-1">Strategy</div>
+                  <select className="w-full bg-gray-700/50 text-white/60 text-xs rounded p-1.5 border border-white/5">
+                    <option>Trend Following</option>
+                    <option>Mean Reversion</option>
+                    <option>Breakout</option>
+                  </select>
+                </div>
+
+                {/* Timeframe Selection */}
+                <div>
+                  <div className="text-white/40 text-xs mb-1">Timeframe</div>
+                  <select className="w-full bg-gray-700/50 text-white/60 text-xs rounded p-1.5 border border-white/5">
+                    <option>1 Hour</option>
+                    <option>4 Hours</option>
+                    <option>1 Day</option>
+                    <option>1 Week</option>
+                  </select>
+                </div>
+
+                {/* Risk Level */}
+                <div>
+                  <div className="text-white/40 text-xs mb-1">Risk Level</div>
+                  <div className="flex gap-1">
+                    <button className="flex-1 bg-gray-700/30 text-white/60 text-[10px] py-1 rounded hover:bg-gray-700/50 transition-colors">
+                      Low
+                    </button>
+                    <button className="flex-1 bg-indigo-500/20 text-indigo-400 text-[10px] py-1 rounded hover:bg-indigo-500/30 transition-colors">
+                      Med
+                    </button>
+                    <button className="flex-1 bg-gray-700/30 text-white/60 text-[10px] py-1 rounded hover:bg-gray-700/50 transition-colors">
+                      High
+                    </button>
+                  </div>
+                </div>
+
+                {/* Position Size */}
+                <div>
+                  <div className="text-white/40 text-xs mb-1">Position Size</div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-white/40 text-[10px] mt-1">
+                    <span>0%</span>
+                    <span>50%</span>
+                    <span>100%</span>
+                  </div>
+                </div>
+
+                {/* Signals Section */}
+                <div>
+                  <div className="text-white/40 text-xs mb-2">Signals</div>
+                  <div className="space-y-2">
+                    {/* MA Crossover */}
+                    <div className="bg-gray-700/30 rounded p-2 border border-white/5">
+                      <div className="text-white/60 text-xs mb-1">MA Crossover</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          placeholder="Fast"
+                          className="bg-gray-700/50 text-white/60 text-xs rounded p-1 border border-white/5"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Slow"
+                          className="bg-gray-700/50 text-white/60 text-xs rounded p-1 border border-white/5"
+                        />
+                      </div>
                     </div>
-                  ))}
-                </div>
-                <div className="flex items-center">
-                  <div className="w-6 h-3 bg-green-500/10 rounded-full border border-green-500/10 relative cursor-pointer">
-                    <div className="absolute right-[1px] top-[1px] w-2 h-2 bg-white rounded-full"></div>
+
+                    {/* RSI Threshold */}
+                    <div className="bg-gray-700/30 rounded p-2 border border-white/5">
+                      <div className="text-white/60 text-xs mb-1">RSI Threshold</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          placeholder="Oversold"
+                          className="bg-gray-700/50 text-white/60 text-xs rounded p-1 border border-white/5"
+                        />
+                        <input
+                          type="number"
+                          placeholder="Overbought"
+                          className="bg-gray-700/50 text-white/60 text-xs rounded p-1 border border-white/5"
+                        />
+                      </div>
+                    </div>
+
+                    {/* MACD */}
+                    <div className="bg-gray-700/30 rounded p-2 border border-white/5 opacity-50">
+                      <div className="text-white/60 text-xs mb-1">MACD</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="number"
+                          placeholder="Fast"
+                          className="bg-gray-700/50 text-white/60 text-xs rounded p-1 border border-white/5"
+                          disabled
+                        />
+                        <input
+                          type="number"
+                          placeholder="Slow"
+                          className="bg-gray-700/50 text-white/60 text-xs rounded p-1 border border-white/5"
+                          disabled
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <span className="ml-1 text-xs text-gray-400">Auto</span>
                 </div>
+
+                <button className="w-full bg-indigo-500/20 text-indigo-400 text-xs py-1.5 rounded hover:bg-indigo-500/30 transition-colors">
+                  Run Backtest
+                </button>
               </div>
             </div>
 
-            {/* Main Chart with Overlays - Increased height to 2/3 */}
-            <div className="relative h-[calc(100%-4rem)] mb-0.5">
-              <Line
-                data={chartData}
-                options={lineChartOptions}
-              />
-              {/* Trade Connection Lines */}
-              {trades.map((trade, index) => (
-                <div
-                  key={index}
-                  className="absolute top-0 left-0 w-full h-full pointer-events-none"
-                  style={{
-                    background: `linear-gradient(to right, 
-                      transparent ${(trade.entry.x / 50) * 100}%, 
-                      rgba(99, 102, 241, 0.2) ${(trade.entry.x / 50) * 100}%, 
-                      rgba(99, 102, 241, 0.2) ${(trade.exit.x / 50) * 100}%, 
-                      transparent ${(trade.exit.x / 50) * 100}%)`
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Metric Indicators */}
-            <div className="grid grid-cols-4 gap-2 mb-1">
-              <div className="bg-green-500/5 rounded-lg p-1 border border-green-500/10 group cursor-pointer hover:bg-green-500/10 transition-colors">
-                <div className="flex justify-between items-center">
-                  <div className="text-green-200/70 text-xs">RSI</div>
-                  <div className="text-green-200/70 text-xs">↑ 2.1</div>
+            {/* New Technical Indicators */}
+            <div className="bg-gray-800/30 rounded-lg p-3 border border-white/5">
+              <div className="text-gray-400 text-xs mb-3">Technical Indicators</div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-white/60 text-xs">Bollinger Bands</div>
+                  <div className="text-green-400 text-xs">Active</div>
                 </div>
-                <div className="flex justify-between items-center mt-0.5">
-                  <div className="text-white text-sm">65.4</div>
-                  <div className="h-0.5 w-12 bg-gray-700/30 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500/30 rounded-full" style={{ width: '65%' }}></div>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-white/60 text-xs">Ichimoku Cloud</div>
+                  <div className="text-yellow-400 text-xs">Pending</div>
                 </div>
-              </div>
-              <div className="bg-blue-500/5 rounded-lg p-1 border border-blue-500/10 group cursor-pointer hover:bg-blue-500/10 transition-colors">
-                <div className="flex justify-between items-center">
-                  <div className="text-blue-200/70 text-xs">MACD</div>
-                  <div className="text-green-200/70 text-xs">↑ 0.12</div>
-                </div>
-                <div className="flex justify-between items-center mt-0.5">
-                  <div className="text-white text-sm">0.85</div>
-                  <div className="h-0.5 w-12 bg-gray-700/30 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500/30 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-yellow-500/5 rounded-lg p-1 border border-yellow-500/10 group cursor-pointer hover:bg-yellow-500/10 transition-colors">
-                <div className="flex justify-between items-center">
-                  <div className="text-yellow-200/70 text-xs">Volume</div>
-                  <div className="text-red-200/70 text-xs">↓ 0.3M</div>
-                </div>
-                <div className="flex justify-between items-center mt-0.5">
-                  <div className="text-white text-sm">1.2M</div>
-                  <div className="h-0.5 w-12 bg-gray-700/30 rounded-full overflow-hidden">
-                    <div className="h-full bg-yellow-500/30 rounded-full" style={{ width: '60%' }}></div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-purple-500/5 rounded-lg p-1 border border-purple-500/10 group cursor-pointer hover:bg-purple-500/10 transition-colors">
-                <div className="flex justify-between items-center">
-                  <div className="text-purple-200/70 text-xs">Volatility</div>
-                  <div className="text-green-200/70 text-xs">↓ 0.5%</div>
-                </div>
-                <div className="flex justify-between items-center mt-0.5">
-                  <div className="text-white text-sm">2.4%</div>
-                  <div className="h-0.5 w-12 bg-gray-700/30 rounded-full overflow-hidden">
-                    <div className="h-full bg-purple-500/30 rounded-full" style={{ width: '40%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Active Signals */}
-            <div className="grid grid-cols-2 gap-2 mb-1">
-              <div className="bg-green-500/5 rounded-lg p-1 border border-green-500/10 group cursor-pointer hover:bg-green-500/10 transition-colors">
-                <div className="flex justify-between items-center">
-                  <div className="text-green-200/70 text-xs font-medium">BUY SIGNAL</div>
-                  <div className="text-green-200/70 text-xs">0.85</div>
-                </div>
-                <div className="flex justify-between items-center mt-0.5">
-                  <div className="text-white text-sm">RSI Oversold</div>
-                  <div className="h-0.5 w-16 bg-gray-700/30 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500/30 rounded-full" style={{ width: '85%' }}></div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-blue-500/5 rounded-lg p-1 border border-blue-500/10 group cursor-pointer hover:bg-blue-500/10 transition-colors">
-                <div className="flex justify-between items-center">
-                  <div className="text-blue-200/70 text-xs font-medium">MACD CROSS</div>
-                  <div className="text-blue-200/70 text-xs">0.75</div>
-                </div>
-                <div className="flex justify-between items-center mt-0.5">
-                  <div className="text-white text-sm">Bullish Crossover</div>
-                  <div className="h-0.5 w-16 bg-gray-700/30 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500/30 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Trade Log */}
-            <div className="bg-gray-800/30 rounded-lg p-1.5">
-              <div className="text-gray-400 text-xs mb-1">Recent Trades</div>
-              <div className="space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <div className="text-white">BTC/USD</div>
-                  </div>
-                  <div className="text-green-200/70">+2.4%</div>
-                  <div className="text-gray-400">2h ago</div>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <div className="text-white">ETH/USD</div>
-                  </div>
-                  <div className="text-red-200/70">-1.2%</div>
-                  <div className="text-gray-400">4h ago</div>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <div className="text-white">SOL/USD</div>
-                  </div>
-                  <div className="text-green-200/70">+3.8%</div>
-                  <div className="text-gray-400">6h ago</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-white/60 text-xs">Fibonacci Retracement</div>
+                  <div className="text-red-400 text-xs">Inactive</div>
                 </div>
               </div>
             </div>

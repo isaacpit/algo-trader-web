@@ -1,244 +1,313 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js';
 
-export const TechnicalLayout = ({ data }) => {
-  return (
-    <div className="bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
-      {/* Laptop Top Bar */}
-      <div className="h-8 bg-gray-800 flex items-center px-4">
-        <div className="flex space-x-2">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-        </div>
-        <div className="text-gray-400 text-sm ml-4">Technical Analysis Dashboard</div>
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
+
+// Custom overlay plugin for trendlines, highlights, and channels
+const overlayPlugin = {
+  id: 'overlay',
+  afterDraw: (chart) => {
+    const ctx = chart.ctx;
+    const overlays = chart.options.plugins.overlay.overlays;
+
+    overlays.forEach(overlay => {
+      if (overlay.type === 'trendline') {
+        ctx.beginPath();
+        ctx.strokeStyle = overlay.color;
+        ctx.lineWidth = 2;
+        ctx.moveTo(
+          chart.scales.x.getPixelForValue(overlay.points[0]),
+          chart.scales.y.getPixelForValue(overlay.points[1])
+        );
+        ctx.lineTo(
+          chart.scales.x.getPixelForValue(overlay.points[2]),
+          chart.scales.y.getPixelForValue(overlay.points[3])
+        );
+        ctx.stroke();
+      } else if (overlay.type === 'highlight') {
+        ctx.fillStyle = overlay.color;
+        ctx.fillRect(
+          chart.scales.x.getPixelForValue(overlay.start),
+          0,
+          chart.scales.x.getPixelForValue(overlay.end) - chart.scales.x.getPixelForValue(overlay.start),
+          chart.height
+        );
+      } else if (overlay.type === 'channel') {
+        ctx.beginPath();
+        ctx.strokeStyle = overlay.color;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.moveTo(
+          chart.scales.x.getPixelForValue(overlay.top[0]),
+          chart.scales.y.getPixelForValue(overlay.top[1])
+        );
+        ctx.lineTo(
+          chart.scales.x.getPixelForValue(overlay.bottom[0]),
+          chart.scales.y.getPixelForValue(overlay.bottom[1])
+        );
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+  }
+};
+
+const commonOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false
+    },
+    tooltip: {
+      mode: 'index',
+      intersect: false,
+      backgroundColor: 'rgba(17, 24, 39, 0.8)',
+      titleColor: '#fff',
+      bodyColor: '#fff',
+      borderColor: 'rgba(99, 102, 241, 0.5)',
+      borderWidth: 1
+    }
+  },
+  scales: {
+    x: {
+      grid: {
+        display: false
+      },
+      ticks: {
+        color: '#9CA3AF'
+      }
+    },
+    y: {
+      grid: {
+        color: 'rgba(75, 85, 99, 0.2)'
+      },
+      ticks: {
+        color: '#9CA3AF'
+      }
+    }
+  }
+};
+
+export const TechnicalLayout = ({ data, selectedChart }) => {
+  const renderChart = (chartData, chartType) => {
+    if (selectedChart !== 'all' && selectedChart !== chartType) {
+      return null;
+    }
+
+    return (
+      <div className="h-[150px]">
+        <Line
+          data={chartData}
+          options={{
+            ...commonOptions,
+            plugins: {
+              ...commonOptions.plugins,
+              overlay: {
+                overlays: chartData.overlays
+              }
+            }
+          }}
+          plugins={[overlayPlugin]}
+        />
       </div>
-      
-      {/* Laptop Screen Content */}
-      <div className="relative aspect-[16/10] bg-gray-900 p-3">
-        <div className="grid grid-cols-12 gap-2 h-full">
-          {/* Main Price Chart */}
-          <div className="col-span-8 bg-gray-800/30 rounded-lg p-3">
-            <div className="flex justify-between items-center mb-2">
-              <div className="text-gray-400 text-sm">BTC/USD</div>
-              <div className="flex space-x-1">
-                <button className="bg-indigo-500/20 text-indigo-300 text-xs px-2 py-0.5 rounded">1D</button>
-                <button className="bg-gray-700/50 text-gray-300 text-xs px-2 py-0.5 rounded">1W</button>
-                <button className="bg-gray-700/50 text-gray-300 text-xs px-2 py-0.5 rounded">1M</button>
-                <button className="bg-gray-700/50 text-gray-300 text-xs px-2 py-0.5 rounded">1Y</button>
-              </div>
-            </div>
-            <div className="h-[calc(100%-2rem)]">
-              <Line
-                data={{
-                  ...data.chartData,
-                  datasets: [
-                    ...data.chartData.datasets,
-                    {
-                      label: 'Market Average',
-                      data: data.benchmarkData,
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                      fill: true,
-                      tension: 0.4
-                    },
-                    {
-                      label: 'Previous Period',
-                      data: data.chartData.datasets[0].data.map(d => d * 0.9),
-                      borderColor: 'rgba(255, 255, 255, 0.1)',
-                      borderDash: [5, 5],
-                      fill: false,
-                      tension: 0.4
-                    }
-                  ]
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false },
-                  },
-                  scales: {
-                    x: { display: false },
-                    y: { display: false },
-                  },
-                  elements: {
-                    point: { radius: 0 },
-                    line: { tension: 0.4 },
-                  },
-                }}
-              />
-            </div>
+    );
+  };
+
+  return (
+    <div className="relative">
+      <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-25"></div>
+      <div className="relative bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
+        {/* Top Bar */}
+        <div className="h-6 bg-gray-800 flex items-center px-3">
+          <div className="flex space-x-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+            <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
           </div>
+          <div className="text-gray-400 text-xs ml-3">Technical Analysis</div>
+        </div>
 
-          {/* Technical Indicators */}
-          <div className="col-span-4 space-y-2">
-            <div className="bg-gray-800/30 rounded-lg p-2">
-              <div className="text-gray-400 text-xs mb-1">RSI (14)</div>
-              <div className="h-[calc(100%-2rem)]">
-                <Line
-                  data={{
-                    ...data.rsiData,
-                    datasets: [
-                      ...data.rsiData.datasets,
-                      {
-                        label: 'Overbought',
-                        data: Array(50).fill(70),
-                        borderColor: 'rgba(255, 0, 0, 0.2)',
-                        borderDash: [5, 5],
-                        fill: false,
-                        tension: 0
-                      },
-                      {
-                        label: 'Oversold',
-                        data: Array(50).fill(30),
-                        borderColor: 'rgba(0, 255, 0, 0.2)',
-                        borderDash: [5, 5],
-                        fill: false,
-                        tension: 0
-                      }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: { enabled: false },
-                    },
-                    scales: {
-                      x: { display: false },
-                      y: { display: false },
-                    },
-                    elements: {
-                      point: { radius: 0 },
-                      line: { tension: 0.4 },
-                    },
-                  }}
-                />
+        {/* Main Grid */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Left Panel */}
+          <div className="space-y-2">
+            {/* Performance Metrics */}
+            <div className="bg-gray-800/30 rounded p-2">
+              <div className="text-white text-xs font-medium mb-2">Performance</div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Total Return</div>
+                  <div className="text-white text-xs">+156.8%</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Sharpe Ratio</div>
+                  <div className="text-white text-xs">2.4</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Max Drawdown</div>
+                  <div className="text-red-400 text-xs">-12.3%</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Win Rate</div>
+                  <div className="text-white text-xs">68.5%</div>
+                </div>
               </div>
             </div>
 
-            <div className="bg-gray-800/30 rounded-lg p-2">
-              <div className="text-gray-400 text-xs mb-1">MACD (12,26,9)</div>
-              <div className="h-[calc(100%-2rem)]">
-                <Line
-                  data={{
-                    ...data.macdData,
-                    datasets: [
-                      ...data.macdData.datasets,
-                      {
-                        label: 'Signal Line',
-                        data: data.macdData.datasets[0].data.map(d => d * 0.8),
-                        borderColor: 'rgba(255, 255, 255, 0.2)',
-                        borderDash: [5, 5],
-                        fill: false,
-                        tension: 0.4
-                      }
-                    ]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: { enabled: false },
-                    },
-                    scales: {
-                      x: { display: false },
-                      y: { display: false },
-                    },
-                    elements: {
-                      point: { radius: 0 },
-                      line: { tension: 0.4 },
-                    },
-                  }}
-                />
+            {/* Technical Indicators */}
+            <div className="bg-gray-800/30 rounded p-2">
+              <div className="text-white text-xs font-medium mb-2">Technical Indicators</div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">RSI (14)</div>
+                  <div className="text-white text-xs">65.4</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">MACD</div>
+                  <div className="text-green-400 text-xs">Bullish</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Bollinger Bands</div>
+                  <div className="text-white text-xs">Upper</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Moving Averages</div>
+                  <div className="text-green-400 text-xs">Golden Cross</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Support/Resistance */}
+            <div className="bg-gray-800/30 rounded p-2">
+              <div className="text-white text-xs font-medium mb-2">Support/Resistance</div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Resistance 1</div>
+                  <div className="text-white text-xs">$45,200</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Resistance 2</div>
+                  <div className="text-white text-xs">$46,500</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Support 1</div>
+                  <div className="text-white text-xs">$42,800</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Support 2</div>
+                  <div className="text-white text-xs">$41,500</div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Support/Resistance Levels */}
-          <div className="col-span-4 bg-gray-800/30 rounded-lg p-2">
-            <div className="text-gray-400 text-xs mb-1">Support/Resistance</div>
-            <div className="space-y-1">
-              <div className="bg-red-500/10 rounded p-1">
-                <div className="text-red-300 text-xs">RESISTANCE 1</div>
-                <div className="text-white text-sm">$45,200</div>
-                <div className="text-gray-400 text-xs">Strong</div>
+          {/* Center Panel */}
+          <div className="col-span-2 space-y-2">
+            {/* Main Chart */}
+            <div className="bg-gray-800/30 rounded p-2">
+              <div className="text-white text-xs font-medium mb-2">Price Action</div>
+              {renderChart(data.chartData, 'strategy')}
+            </div>
+
+            {/* Additional Charts */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-gray-800/30 rounded p-2">
+                <div className="text-white text-xs font-medium mb-2">RSI</div>
+                {renderChart(data.rsiData, 'rsi')}
               </div>
-              <div className="bg-green-500/10 rounded p-1">
-                <div className="text-green-300 text-xs">SUPPORT 1</div>
-                <div className="text-white text-sm">$42,800</div>
-                <div className="text-gray-400 text-xs">Strong</div>
+              <div className="bg-gray-800/30 rounded p-2">
+                <div className="text-white text-xs font-medium mb-2">MACD</div>
+                {renderChart(data.macdData, 'macd')}
               </div>
-              <div className="bg-blue-500/10 rounded p-1">
-                <div className="text-blue-300 text-xs">PIVOT POINT</div>
-                <div className="text-white text-sm">$44,000</div>
-                <div className="text-gray-400 text-xs">Current</div>
+              <div className="bg-gray-800/30 rounded p-2">
+                <div className="text-white text-xs font-medium mb-2">Volume</div>
+                {renderChart(data.volumeData, 'volume')}
+              </div>
+              <div className="bg-gray-800/30 rounded p-2">
+                <div className="text-white text-xs font-medium mb-2">Risk</div>
+                {renderChart(data.riskData, 'risk')}
               </div>
             </div>
           </div>
 
-          {/* Trading Signals */}
-          <div className="col-span-4 bg-gray-800/30 rounded-lg p-2">
-            <div className="text-gray-400 text-xs mb-1">Trading Signals</div>
-            <div className="space-y-1">
-              <div className="bg-green-500/10 rounded p-1">
-                <div className="text-green-300 text-xs">BUY SIGNAL</div>
-                <div className="text-white text-sm">RSI Oversold</div>
-                <div className="text-gray-400 text-xs">Strength: 0.85</div>
-              </div>
-              <div className="bg-blue-500/10 rounded p-1">
-                <div className="text-blue-300 text-xs">MACD CROSS</div>
-                <div className="text-white text-sm">Bullish Crossover</div>
-                <div className="text-gray-400 text-xs">Strength: 0.75</div>
-              </div>
-              <div className="bg-purple-500/10 rounded p-1">
-                <div className="text-purple-300 text-xs">VOLUME SPIKE</div>
-                <div className="text-white text-sm">Above Average</div>
-                <div className="text-gray-400 text-xs">Strength: 0.65</div>
+          {/* Right Panel */}
+          <div className="space-y-2">
+            {/* Recent Trades */}
+            <div className="bg-gray-800/30 rounded p-2">
+              <div className="text-white text-xs font-medium mb-2">Recent Trades</div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="text-green-400 text-xs">BTC/USD</div>
+                  <div className="text-white text-xs">+2.4%</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-red-400 text-xs">ETH/USD</div>
+                  <div className="text-white text-xs">-1.2%</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-green-400 text-xs">SOL/USD</div>
+                  <div className="text-white text-xs">+5.6%</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Volume Analysis */}
-          <div className="col-span-4 bg-gray-800/30 rounded-lg p-2">
-            <div className="text-gray-400 text-xs mb-1">Volume Analysis</div>
-            <div className="h-[calc(100%-2rem)]">
-              <Line
-                data={{
-                  ...data.volumeData,
-                  datasets: [
-                    ...data.volumeData.datasets,
-                    {
-                      label: 'Average Volume',
-                      data: data.volumeData.datasets[0].data.map(d => d * 0.7),
-                      borderColor: 'rgba(255, 255, 255, 0.2)',
-                      borderDash: [5, 5],
-                      fill: false,
-                      tension: 0.4
-                    }
-                  ]
-                }}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { display: false },
-                    tooltip: { enabled: false },
-                  },
-                  scales: {
-                    x: { display: false },
-                    y: { display: false },
-                  },
-                  elements: {
-                    point: { radius: 0 },
-                    line: { tension: 0.4 },
-                  },
-                }}
-              />
+            {/* Trading Signals */}
+            <div className="bg-gray-800/30 rounded p-2">
+              <div className="text-white text-xs font-medium mb-2">Trading Signals</div>
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className="text-green-400 text-xs">RSI Oversold</div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <div className="text-green-400 text-xs">MACD Crossover</div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-red-400 rounded-full"></div>
+                  <div className="text-red-400 text-xs">Bollinger Upper</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Strategy Status */}
+            <div className="bg-gray-800/30 rounded p-2">
+              <div className="text-white text-xs font-medium mb-2">Strategy Status</div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Active Trades</div>
+                  <div className="text-white text-xs">3</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Open Positions</div>
+                  <div className="text-white text-xs">$24,500</div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="text-gray-400 text-xs">Daily P&L</div>
+                  <div className="text-green-400 text-xs">+$1,240</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -297,183 +297,299 @@ const surroundingWindows = [
 ];
 
 export const Hero = () => {
-    const { isDarkMode } = useTheme();
-    const [backgroundCharts, setBackgroundCharts] = useState(generateBackgroundCharts(isDarkMode));
-    const chartRefs = useRef(backgroundCharts.map(() => null));
-    const [strategyData] = useState(generateStrategyData());
-    const { baseData, benchmarkData } = strategyData;
+  const { isDarkMode } = useTheme();
+  const [backgroundCharts, setBackgroundCharts] = useState([]);
+  const [strategyData, setStrategyData] = useState(null);
+  const chartRefs = useRef([]);
 
-    // Update background charts when theme changes
-    useEffect(() => {
-        setBackgroundCharts(generateBackgroundCharts(isDarkMode));
-    }, [isDarkMode]);
+  useEffect(() => {
+    setBackgroundCharts(generateBackgroundCharts(isDarkMode));
+    setStrategyData(generateStrategyData());
+  }, [isDarkMode]);
 
-    // Animate background charts with reduced frequency
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setBackgroundCharts(prevCharts =>
-                prevCharts.map(chart => ({
-                    ...chart,
-                    data: generateChartData(Math.floor(Math.random() * chartPatterns.length)),
-                }))
-            );
-        }, 10000); // Update every 10 seconds
+  // Generate chart data with overlays
+  const chartData = useMemo(() => {
+    if (!strategyData) return null;
 
-        return () => clearInterval(interval);
-    }, []);
-
-    const renderWindow = (window) => {
-        const baseClasses = `absolute rounded-lg shadow-lg overflow-hidden backdrop-blur-sm bg-gray-900 border border-gray-700`;
-
-        return (
-            <div
-                key={window.id}
-                className={baseClasses}
-                style={{
-                    ...window.position,
-                    ...window.size,
-                }}
-            >
-                {/* Laptop Top Bar */}
-                <div className="h-6 bg-gray-800 flex items-center px-3">
-                    <div className="flex space-x-1.5">
-                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                        <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    </div>
-                    <div className="text-gray-400 text-xs ml-3">{window.title}</div>
-                </div>
-                
-                {/* Laptop Screen Content */}
-                <div className="aspect-[16/10] bg-gray-900 p-2">
-                    {window.type === 'chart' && (
-                        <Line
-                            data={window.data}
-                            options={getChartOptions(isDarkMode)}
-                        />
-                    )}
-                    {window.type === 'list' && (
-                        <div className="space-y-2">
-                            {window.items.map((item, index) => (
-                                <div key={index} className="flex justify-between items-center text-sm">
-                                    <span className="text-gray-300">{item.name}</span>
-                                    <span className={`px-2 py-1 rounded ${
-                                        item.signal === 'BUY' ? 'bg-green-500/20 text-green-400' :
-                                        item.signal === 'SELL' ? 'bg-red-500/20 text-red-400' :
-                                        'bg-yellow-500/20 text-yellow-400'
-                                    }`}>
-                                        {item.signal}
-                                    </span>
-                                    <span className="text-gray-400">{item.confidence}</span>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
+    return {
+      chartData: {
+        labels: Array(100).fill(''),
+        datasets: [
+          {
+            label: 'Strategy',
+            data: strategyData.baseData,
+            borderColor: 'rgba(99,102,241,0.8)',
+            backgroundColor: 'rgba(99,102,241,0.1)',
+            fill: true,
+            tension: 0.4
+          },
+          {
+            label: 'Market',
+            data: strategyData.benchmarkData,
+            borderColor: 'rgba(156,163,175,0.5)',
+            backgroundColor: 'rgba(156,163,175,0.05)',
+            fill: true,
+            tension: 0.1,
+            borderDash: [5, 5]
+          }
+        ],
+        overlays: [
+          {
+            type: 'trendline',
+            points: [0, 25, 50, 75, 99],
+            color: 'rgba(16,185,129,0.3)'
+          },
+          {
+            type: 'highlight',
+            start: 25,
+            end: 50,
+            color: 'rgba(245,158,11,0.2)'
+          }
+        ]
+      },
+      rsiData: {
+        labels: Array(100).fill(''),
+        datasets: [{
+          label: 'RSI',
+          data: Array.from({ length: 100 }, (_, i) => {
+            const base = 50 + Math.sin(i * 0.2) * 30;
+            const noise = (Math.random() - 0.5) * 2;
+            return Math.min(100, Math.max(0, base + noise));
+          }),
+          borderColor: 'rgba(16,185,129,0.8)',
+          backgroundColor: 'rgba(16,185,129,0.1)',
+          fill: true,
+          tension: 0.4
+        }],
+        overlays: [
+          {
+            type: 'highlight',
+            start: 10,
+            end: 20,
+            color: 'rgba(239,68,68,0.2)'
+          },
+          {
+            type: 'highlight',
+            start: 30,
+            end: 40,
+            color: 'rgba(16,185,129,0.2)'
+          }
+        ]
+      },
+      volumeData: {
+        labels: Array(100).fill(''),
+        datasets: [{
+          label: 'Volume',
+          data: Array.from({ length: 100 }, (_, i) => {
+            const base = 20 + Math.sin(i * 0.3) * 10;
+            const spike = i > 25 && i < 35 ? 30 : 0;
+            const noise = (Math.random() - 0.5) * 2;
+            return base + spike + noise;
+          }),
+          borderColor: 'rgba(245,158,11,0.8)',
+          backgroundColor: 'rgba(245,158,11,0.1)',
+          fill: true,
+          tension: 0.4
+        }],
+        overlays: [
+          {
+            type: 'highlight',
+            start: 25,
+            end: 35,
+            color: 'rgba(245,158,11,0.2)'
+          }
+        ]
+      },
+      macdData: {
+        labels: Array(100).fill(''),
+        datasets: [{
+          label: 'MACD',
+          data: Array.from({ length: 100 }, (_, i) => {
+            const base = Math.sin(i * 0.2) * 10;
+            const crossover = i > 25 ? 15 : -15;
+            const noise = (Math.random() - 0.5) * 1;
+            return base + crossover + noise;
+          }),
+          borderColor: 'rgba(99,102,241,0.8)',
+          backgroundColor: 'rgba(99,102,241,0.1)',
+          fill: true,
+          tension: 0.4
+        }],
+        overlays: [
+          {
+            type: 'highlight',
+            start: 20,
+            end: 30,
+            color: 'rgba(99,102,241,0.2)'
+          }
+        ]
+      },
+      riskData: {
+        labels: Array(100).fill(''),
+        datasets: [{
+          label: 'Risk',
+          data: Array.from({ length: 100 }, (_, i) => {
+            const base = 30 + Math.sin(i * 0.2) * 10;
+            const spike = i > 15 && i < 25 ? 40 : 0;
+            const noise = (Math.random() - 0.5) * 2;
+            return base + spike + noise;
+          }),
+          borderColor: 'rgba(239,68,68,0.8)',
+          backgroundColor: 'rgba(239,68,68,0.1)',
+          fill: true,
+          tension: 0.4
+        }],
+        overlays: [
+          {
+            type: 'highlight',
+            start: 15,
+            end: 25,
+            color: 'rgba(239,68,68,0.2)'
+          }
+        ]
+      }
     };
+  }, [strategyData]);
 
-    return (
-        <section className="relative text-gray-900 dark:text-white py-32 px-6 overflow-hidden">
-            {/* Background charts */}
-            <div className="absolute inset-0 overflow-hidden">
-                {backgroundCharts.map((chart, index) => (
-                    <div
-                        key={index}
-                        className="absolute opacity-4"
-                        style={{
-                            top: chart.position.top,
-                            left: chart.position.left,
-                            right: chart.position.right,
-                            width: chart.width,
-                            height: chart.height,
-                            transform: `rotate(${chart.position.rotate}deg)`,
-                        }}
-                    >
-                        <div className="relative w-full h-full">
-                            <Line
-                                ref={(el) => (chartRefs.current[index] = el)}
-                                data={{
-                                    labels: Array.from({ length: chart.data.length }, (_, i) => i),
-                                    datasets: [
-                                        {
-                                            data: chart.data,
-                                            borderColor: chart.color.border,
-                                            backgroundColor: chart.color.fill,
-                                            fill: true,
-                                            tension: 0.4,
-                                        },
-                                    ],
-                                }}
-                                options={{
-                                    ...getChartOptions(isDarkMode),
-                                    plugins: {
-                                        ...getChartOptions(isDarkMode).plugins,
-                                        title: {
-                                            ...getChartOptions(isDarkMode).plugins.title,
-                                            text: chart.title,
-                                        },
-                                    },
-                                    scales: {
-                                        ...getChartOptions(isDarkMode).scales,
-                                        x: {
-                                            ...getChartOptions(isDarkMode).scales.x,
-                                            title: {
-                                                ...getChartOptions(isDarkMode).scales.x.title,
-                                                text: chart.axisLabels.x,
-                                            },
-                                        },
-                                        y: {
-                                            ...getChartOptions(isDarkMode).scales.y,
-                                            title: {
-                                                ...getChartOptions(isDarkMode).scales.y.title,
-                                                text: chart.axisLabels.y,
-                                            },
-                                        },
-                                    },
-                                }}
-                            />
-                        </div>
-                    </div>
-                ))}
+  return (
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background Charts */}
+      {backgroundCharts.map((chart, index) => (
+        <div
+          key={index}
+          className="absolute opacity-20"
+          style={{
+            ...chart.position,
+            width: chart.width,
+            height: chart.height,
+            transform: `rotate(${chart.rotate}deg)`,
+          }}
+        >
+          <Line
+            ref={(el) => (chartRefs.current[index] = el)}
+            data={{
+              labels: Array(chart.data.length).fill(''),
+              datasets: [{
+                data: chart.data,
+                borderColor: chart.color.border,
+                borderWidth: 1,
+                fill: true,
+                backgroundColor: chart.color.fill,
+              }]
+            }}
+            options={{
+              ...getChartOptions(isDarkMode),
+              plugins: {
+                ...getChartOptions(isDarkMode).plugins,
+                title: {
+                  ...getChartOptions(isDarkMode).plugins.title,
+                  text: chart.title,
+                  color: 'rgba(255, 255, 255, 0.15)',
+                },
+              },
+              scales: {
+                x: {
+                  ...getChartOptions(isDarkMode).scales.x,
+                  title: {
+                    ...getChartOptions(isDarkMode).scales.x.title,
+                    text: chart.axisLabels.x,
+                    color: 'rgba(255, 255, 255, 0.1)',
+                  },
+                  grid: {
+                    ...getChartOptions(isDarkMode).scales.x.grid,
+                    color: 'rgba(255, 255, 255, 0.02)',
+                  },
+                  border: {
+                    ...getChartOptions(isDarkMode).scales.x.border,
+                    color: 'rgba(255, 255, 255, 0.08)',
+                  },
+                },
+                y: {
+                  ...getChartOptions(isDarkMode).scales.y,
+                  title: {
+                    ...getChartOptions(isDarkMode).scales.y.title,
+                    text: chart.axisLabels.y,
+                    color: 'rgba(255, 255, 255, 0.1)',
+                  },
+                  grid: {
+                    ...getChartOptions(isDarkMode).scales.y.grid,
+                    color: 'rgba(255, 255, 255, 0.02)',
+                  },
+                  border: {
+                    ...getChartOptions(isDarkMode).scales.y.border,
+                    color: 'rgba(255, 255, 255, 0.08)',
+                  },
+                },
+              },
+            }}
+          />
+          {/* Metrics Panel */}
+          <div className="absolute top-2 right-2 bg-black/10 backdrop-blur-sm rounded p-2 text-xs font-mono">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <div className="text-white/20">CHG</div>
+                <div className="text-white/40">{chart.metrics.change}</div>
+              </div>
+              <div>
+                <div className="text-white/20">VOL</div>
+                <div className="text-white/40">{chart.metrics.volatility}</div>
+              </div>
+              <div>
+                <div className="text-white/20">AVG</div>
+                <div className="text-white/40">{chart.metrics.average}</div>
+              </div>
             </div>
+          </div>
+        </div>
+      ))}
 
-            {/* Surrounding windows */}
-            {surroundingWindows.map(renderWindow)}
-
-            {/* Main content */}
-            <div className="relative z-10 max-w-7xl mx-auto">
-                <div className="text-center">
-                    <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white sm:text-5xl md:text-6xl">
-                        <span className="block">Algorithmic Trading</span>
-                        <span className="block text-indigo-600 dark:text-indigo-400">Made Simple</span>
-                    </h1>
-                    <p className="mt-3 max-w-md mx-auto text-base text-gray-500 dark:text-gray-400 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-                        Build, test, and deploy your trading strategies with our powerful platform.
-                        Start trading smarter today.
-                    </p>
-                    <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-                        <div className="rounded-md shadow">
-                            <Link
-                                to="/signup"
-                                className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
-                            >
-                                Get Started
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-16">
-                    <div className="relative">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg blur opacity-25"></div>
-                        <div className="relative">
-                            <LayoutSelector />
-                        </div>
-                    </div>
-                </div>
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="max-w-6xl mx-auto relative">
+          <div className="text-center mb-12">
+            <div className="inline-block mb-6">
+              <span className="bg-indigo-500/10 text-indigo-300 px-4 py-2 rounded-full text-sm font-medium">
+                Professional-Grade Trading Platform
+              </span>
             </div>
-        </section>
-    );
+            <h1 className="text-6xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+              Build. Test. Trade.
+            </h1>
+            <p className="text-2xl mb-8 text-gray-300 max-w-3xl mx-auto leading-relaxed">
+              Design sophisticated trading algorithms, backtest them with precision, and optimize your strategy with institutional-grade tools.
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button className="bg-indigo-500 hover:bg-indigo-600 text-white px-8 py-4 rounded-lg text-lg font-semibold shadow-lg transition-all duration-200 transform hover:scale-105">
+                Start Free Trial
+              </button>
+              <button className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-lg text-lg font-semibold backdrop-blur-sm transition-all duration-200">
+                View Demo
+              </button>
+            </div>
+          </div>
+
+          {/* Stats Section */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+              <div className="text-3xl font-bold text-indigo-400 mb-2">10+</div>
+              <div className="text-gray-300">Years of Historical Data</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+              <div className="text-3xl font-bold text-indigo-400 mb-2">99.9%</div>
+              <div className="text-gray-300">Backtest Accuracy</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
+              <div className="text-3xl font-bold text-indigo-400 mb-2">50K+</div>
+              <div className="text-gray-300">Active Traders</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Laptop Preview */}
+        <div className="mt-16">
+          <LayoutSelector data={chartData} />
+        </div>
+      </div>
+    </div>
+  );
 };
