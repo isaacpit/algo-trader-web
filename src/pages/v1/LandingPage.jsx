@@ -9,7 +9,7 @@ import { Footer } from "../../components/Footer";
 export const LandingPageV1 = () => {
   return (
     <div className="relative bg-gradient-to-br from-gray-900 via-indigo-900 to-gray-900 text-white min-h-screen">
-      <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20"></div>
+      <div className="fixed inset-0 bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20"></div>
       <div className="relative z-10">
         <div className="pt-20">
           <Hero />
