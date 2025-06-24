@@ -247,9 +247,11 @@ async def handle_callback(
             user_data
         )
         
-        if not storage_success:
+        if storage_success:
+            logger.info(f"Successfully wrote store token in DynamoDB for user: {user_data['email']}")
+        else:
             logger.warning(f"Failed to store token in DynamoDB for user: {user_data['email']}")
-        
+
         # Clean up expired tokens for this user
         await delete_expired_tokens(user_data["id"])
         
