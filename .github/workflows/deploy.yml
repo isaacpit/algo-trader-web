@@ -21,7 +21,7 @@ jobs:
         node-version: '23'
         cache: 'npm'
 
-    - name: [DEBUG] List files
+    - name: List files
       run: ls -lah
 
     - name: Install dependencies
