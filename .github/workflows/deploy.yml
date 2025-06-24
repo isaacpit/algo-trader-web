@@ -22,7 +22,10 @@ jobs:
         cache: 'npm'
 
     - name: List files
-      run: ls -lah
+      run: >
+        echo "PWD=$(pwd)"
+        && ls -lah
+        
 
     - name: Install dependencies
       run: npm ci
