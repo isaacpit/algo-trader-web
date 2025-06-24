@@ -20,7 +20,10 @@ jobs:
       with:
         node-version: '23'
         cache: 'npm'
-        
+
+    - name: [DEBUG] List files
+      run: ls -lah
+
     - name: Install dependencies
       run: npm ci
       
