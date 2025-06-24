@@ -1,11 +1,17 @@
 import React from 'react';
 import { useDebug } from '../context/DebugContext';
+import { config, validateConfig } from '../config/environment';
 
 export const GoogleSignIn = ({ onSuccess, onError }) => {
   const { addDebugLog } = useDebug();
 
   const handleGoogleSignIn = async () => {
     try {
+      // Validate configuration
+      if (!validateConfig()) {
+        throw new Error('Missing required OAuth configuration');
+      }
+
       // Generate a random state
       const state = Math.random().toString(36).substring(7);
       addDebugLog({
@@ -25,9 +31,9 @@ export const GoogleSignIn = ({ onSuccess, onError }) => {
         },
       });
 
-      // Construct the Google OAuth URL
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      const redirectUri = import.meta.env.VITE_GOOGLE_REDIRECT_URI;
+      // Get configuration values
+      const clientId = config.GOOGLE_CLIENT_ID;
+      const redirectUri = config.GOOGLE_REDIRECT_URI;
       
       addDebugLog({
         emoji: '🔧',
@@ -35,6 +41,7 @@ export const GoogleSignIn = ({ onSuccess, onError }) => {
         data: {
           clientId: clientId ? 'Present' : 'Missing',
           redirectUri: redirectUri ? 'Present' : 'Missing',
+          environment: import.meta.env.PROD ? 'production' : 'development',
         },
       });
 

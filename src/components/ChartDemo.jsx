@@ -158,3 +158,5 @@ export const ChartDemo = () => {
     </section>
   );
 }
+
+export default ChartDemo;

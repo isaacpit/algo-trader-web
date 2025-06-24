@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -219,7 +219,9 @@ const generateStrategyData = () => {
 
 export const Hero = () => {
   const chartRefs = useRef(backgroundCharts.map(() => null));
-  const { baseData, benchmarkData } = generateStrategyData();
+  
+  // Memoize the strategy data to prevent unnecessary re-renders
+  const { baseData, benchmarkData } = useMemo(() => generateStrategyData(), []);
 
   useEffect(() => {
     const animateCharts = () => {

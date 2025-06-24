@@ -1,138 +1,159 @@
-import React from 'react';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { Chart } from 'chart.js/auto';
 
-// Register ChartJS components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+export const PerformanceChart = ({ data, title, height = 300, className = '', onLoad, onError, renderStartTime }) => {
+  const chartRef = useRef(null);
+  const chartInstanceRef = useRef(null);
+  const hasReportedRef = useRef(false);
 
-export const PerformanceChart = ({ 
-  data = {
-    labels: [],
-    datasets: []
-  },
-  height = '300px',
-  showLegend = true,
-  showTooltip = true,
-  showGrid = false,
-  showAxes = false,
-  fill = true,
-  tension = 0.4,
-  pointRadius = 0,
-  borderWidth = 2,
-  className = '',
-}) => {
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { 
-        display: showLegend,
-        position: 'top',
-        labels: {
-          color: 'rgba(156,163,175,0.8)',
-          usePointStyle: true,
-          pointStyle: 'circle'
-        }
-      },
-      tooltip: { 
-        enabled: showTooltip,
-        mode: 'index',
-        intersect: false,
-        backgroundColor: 'rgba(17, 24, 39, 0.8)',
-        titleColor: 'rgba(255, 255, 255, 0.9)',
-        bodyColor: 'rgba(255, 255, 255, 0.8)',
-        borderColor: 'rgba(75, 85, 99, 0.5)',
-        borderWidth: 1,
-        padding: 12,
-        boxPadding: 6,
-        usePointStyle: true,
-        callbacks: {
-          label: function(context) {
-            let label = context.dataset.label || '';
-            if (label) {
-              label += ': ';
+  // Use the passed render start time or fall back to component mount time
+  const loadStartTime = useRef(renderStartTime || performance.now());
+
+  // Memoize the callbacks to prevent unnecessary re-renders
+  const handleLoad = useCallback(() => {
+    if (onLoad && !hasReportedRef.current) {
+      hasReportedRef.current = true;
+      onLoad();
+    }
+  }, [onLoad]);
+
+  const handleError = useCallback((error) => {
+    if (onError && !hasReportedRef.current) {
+      hasReportedRef.current = true;
+      onError(error);
+    }
+  }, [onError]);
+
+  useEffect(() => {
+    console.log('[PERFORMANCE CHART] Component mounted, creating chart');
+    
+    if (!chartRef.current || !data) {
+      console.warn('[PERFORMANCE CHART] Missing chart ref or data');
+      if (handleError) handleError(new Error('Missing chart ref or data'));
+      return;
+    }
+
+    try {
+      // Destroy existing chart if it exists
+      if (chartInstanceRef.current) {
+        console.log('[PERFORMANCE CHART] Destroying existing chart');
+        chartInstanceRef.current.destroy();
+      }
+
+      console.log('[PERFORMANCE CHART] Creating new chart with data:', {
+        labelsCount: data.labels?.length || 0,
+        datasetsCount: data.datasets?.length || 0,
+        firstDatasetDataCount: data.datasets?.[0]?.data?.length || 0
+      });
+
+      const ctx = chartRef.current.getContext('2d');
+      
+      chartInstanceRef.current = new Chart(ctx, {
+        type: 'line',
+        data: data,
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: !!title,
+              text: title || '',
+              color: '#6B7280',
+              font: {
+                size: 14,
+                weight: 'bold'
+              }
+            },
+            legend: {
+              display: true,
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                padding: 20,
+                color: '#6B7280'
+              }
             }
-            if (context.parsed.y !== null) {
-              label += new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD'
-              }).format(context.parsed.y);
+          },
+          scales: {
+            x: {
+              display: true,
+              grid: {
+                display: false
+              },
+              ticks: {
+                color: '#6B7280',
+                maxTicksLimit: 8
+              }
+            },
+            y: {
+              display: true,
+              grid: {
+                color: 'rgba(107, 114, 128, 0.1)'
+              },
+              ticks: {
+                color: '#6B7280',
+                callback: function(value) {
+                  return '$' + value.toLocaleString();
+                }
+              }
             }
-            return label;
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          elements: {
+            point: {
+              radius: 0,
+              hoverRadius: 4
+            },
+            line: {
+              tension: 0.4
+            }
           }
         }
-      },
-    },
-    scales: {
-      x: {
-        display: showAxes,
-        grid: {
-          display: showGrid,
-          color: 'rgba(75, 85, 99, 0.1)',
-        },
-        ticks: {
-          color: 'rgba(156, 163, 175, 0.8)',
-        }
-      },
-      y: {
-        display: showAxes,
-        grid: {
-          display: showGrid,
-          color: 'rgba(75, 85, 99, 0.1)',
-        },
-        ticks: {
-          color: 'rgba(156, 163, 175, 0.8)',
-          callback: function(value) {
-            return new Intl.NumberFormat('en-US', {
-              style: 'currency',
-              currency: 'USD',
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }).format(value);
-          }
-        }
-      },
-    },
-    interaction: {
-      mode: 'nearest',
-      axis: 'x',
-      intersect: false
-    },
-    elements: {
-      point: { 
-        radius: pointRadius,
-        hitRadius: 10,
-        hoverRadius: 4,
-      },
-      line: { 
-        tension: tension,
-        borderWidth: borderWidth,
-      },
-    },
-  };
+      });
+
+      // Chart created successfully
+      const loadTime = performance.now() - loadStartTime.current;
+      console.log(`[PERFORMANCE CHART] Chart created successfully in ${loadTime.toFixed(2)}ms`);
+      
+      if (handleLoad) {
+        handleLoad();
+      }
+
+    } catch (error) {
+      console.error('[PERFORMANCE CHART] Error creating chart:', error);
+      const loadTime = performance.now() - loadStartTime.current;
+      console.error(`[PERFORMANCE CHART] Chart failed after ${loadTime.toFixed(2)}ms:`, error);
+      
+      if (handleError) {
+        handleError(error);
+      }
+    }
+
+    return () => {
+      if (chartInstanceRef.current) {
+        console.log('[PERFORMANCE CHART] Cleaning up chart instance');
+        chartInstanceRef.current.destroy();
+        chartInstanceRef.current = null;
+      }
+    };
+  }, [data, title, handleLoad, handleError]);
+
+  console.log('[PERFORMANCE CHART] Rendering chart component:', {
+    hasData: !!data,
+    title,
+    height,
+    className,
+    renderStartTime: renderStartTime || 'not provided'
+  });
 
   return (
     <div className={`relative ${className}`} style={{ height }}>
-      <Line data={data} options={options} />
+      <canvas ref={chartRef} />
     </div>
   );
-}; 
+};
+
+export default PerformanceChart;
