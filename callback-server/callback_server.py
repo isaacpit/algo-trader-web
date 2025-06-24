@@ -16,6 +16,8 @@ import requests
 from pydantic import BaseModel, Field
 import jwt
 from dotenv import load_dotenv
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError
 
 # Load environment variables
 load_dotenv(verbose=True)
@@ -47,14 +49,24 @@ class Config:
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
     
-    # Database (for future use)
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    # AWS Configuration
+    AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+    DYNAMODB_TABLE_NAME = os.getenv("DYNAMODB_TABLE_NAME", "Algo-Trader-User-Token-Table")
     
     # Rate limiting
     RATE_LIMIT_REQUESTS = int(os.getenv("RATE_LIMIT_REQUESTS", "100"))
     RATE_LIMIT_WINDOW = int(os.getenv("RATE_LIMIT_WINDOW", "3600"))  # 1 hour
 
 config = Config()
+
+# Initialize AWS DynamoDB client
+try:
+    dynamodb = boto3.resource('dynamodb', region_name=config.AWS_REGION)
+    table = dynamodb.Table(config.DYNAMODB_TABLE_NAME)
+    logger.info(f"Initialized DynamoDB connection to table: {config.DYNAMODB_TABLE_NAME}")
+except Exception as e:
+    logger.error(f"Failed to initialize DynamoDB: {str(e)}")
+    table = None
 
 # Pydantic models
 class CallbackRequest(BaseModel):
@@ -228,6 +240,19 @@ async def handle_callback(
         jwt_token = create_jwt_token(user_data)
         user_data["session_token"] = jwt_token
         
+        # Store user token in DynamoDB
+        storage_success = await store_user_token(
+            user_data["id"], 
+            callback_data.access_token, 
+            user_data
+        )
+        
+        if not storage_success:
+            logger.warning(f"Failed to store token in DynamoDB for user: {user_data['email']}")
+        
+        # Clean up expired tokens for this user
+        await delete_expired_tokens(user_data["id"])
+        
         logger.info(f"Successfully processed callback for user: {user_data['email']}")
         return UserResponse(**user_data)
         
@@ -255,7 +280,9 @@ async def verify_session(credentials: HTTPAuthorizationCredentials = Depends(sec
     """Verify JWT session token"""
     try:
         token = credentials.credentials
+        logger.info(f"JWT session token: {token}")
         payload = jwt.decode(token, config.SECRET_KEY, algorithms=["HS256"])
+        logger.info(f"[decrypted] payload={payload}")
         
         return {
             "valid": True,
@@ -283,6 +310,54 @@ async def root():
         "docs": "/docs"
     }
 
+@app.get("/api/auth/tokens/{user_id}")
+async def get_user_tokens_endpoint(user_id: str):
+    """Get all tokens for a user (for debugging/admin purposes)"""
+    try:
+        tokens = await get_user_tokens(user_id)
+        return {
+            "user_id": user_id,
+            "tokens": tokens,
+            "count": len(tokens)
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving tokens for user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving tokens"
+        )
+
+@app.delete("/api/auth/tokens/{user_id}")
+async def delete_user_tokens(user_id: str):
+    """Delete all tokens for a user"""
+    try:
+        tokens = await get_user_tokens(user_id)
+        deleted_count = 0
+        
+        for token in tokens:
+            try:
+                table.delete_item(
+                    Key={
+                        'USER_ID': user_id,
+                        'TIMESTAMP': token['TIMESTAMP']
+                    }
+                )
+                deleted_count += 1
+            except Exception as e:
+                logger.error(f"Error deleting token {token['TIMESTAMP']}: {str(e)}")
+        
+        return {
+            "user_id": user_id,
+            "deleted_count": deleted_count,
+            "message": f"Deleted {deleted_count} tokens for user {user_id}"
+        }
+    except Exception as e:
+        logger.error(f"Error deleting tokens for user {user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error deleting tokens"
+        )
+
 # Error handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -306,6 +381,94 @@ async def general_exception_handler(request: Request, exc: Exception):
             timestamp=datetime.utcnow().isoformat()
         ).dict()
     )
+
+# DynamoDB functions
+async def store_user_token(user_id: str, access_token: str, user_data: Dict[str, Any]) -> bool:
+    """Store user token in DynamoDB according to the schema"""
+    if not table:
+        logger.warning("DynamoDB table not available, skipping token storage")
+        return False
+    
+    try:
+        timestamp = datetime.utcnow().isoformat()
+        
+        item = {
+            'USER_ID': user_id,
+            'TIMESTAMP': timestamp,
+            'access_token': access_token,
+            'email': user_data.get('email', ''),
+            'name': user_data.get('name', ''),
+            'picture': user_data.get('picture', ''),
+            'token_received_at': timestamp,
+            'expires_at': (datetime.utcnow() + timedelta(hours=1)).isoformat(),
+            'session_token': create_jwt_token(user_data)
+        }
+        
+        table.put_item(Item=item)
+        logger.info(f"Stored user token in DynamoDB for user: {user_id}")
+        logger.info(f"item={item}")
+        return True
+        
+    except ClientError as e:
+        logger.error(f"DynamoDB error storing user token: {str(e)}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error storing user token: {str(e)}")
+        return False
+
+async def get_user_tokens(user_id: str) -> list:
+    """Retrieve all tokens for a user from DynamoDB"""
+    if not table:
+        logger.warning("DynamoDB table not available, cannot retrieve tokens")
+        return []
+    
+    try:
+        response = table.query(
+            KeyConditionExpression='USER_ID = :user_id',
+            ExpressionAttributeValues={
+                ':user_id': user_id
+            }
+        )
+        
+        tokens = response.get('Items', [])
+        logger.info(f"Retrieved {len(tokens)} tokens for user: {user_id}")
+        return tokens
+        
+    except ClientError as e:
+        logger.error(f"DynamoDB error retrieving user tokens: {str(e)}")
+        return []
+    except Exception as e:
+        logger.error(f"Unexpected error retrieving user tokens: {str(e)}")
+        return []
+
+async def delete_expired_tokens(user_id: str) -> bool:
+    """Delete expired tokens for a user"""
+    if not table:
+        logger.warning("DynamoDB table not available, cannot delete tokens")
+        return False
+    
+    try:
+        # Get all tokens for the user
+        tokens = await get_user_tokens(user_id)
+        current_time = datetime.utcnow()
+        
+        # Delete expired tokens
+        for token in tokens:
+            expires_at = datetime.fromisoformat(token.get('expires_at', '1970-01-01T00:00:00'))
+            if expires_at < current_time:
+                table.delete_item(
+                    Key={
+                        'USER_ID': user_id,
+                        'TIMESTAMP': token['TIMESTAMP']
+                    }
+                )
+                logger.info(f"Deleted expired token for user: {user_id}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error deleting expired tokens: {str(e)}")
+        return False
 
 if __name__ == "__main__":
     logger.info(f"Starting server on {config.HOST}:{config.PORT}")

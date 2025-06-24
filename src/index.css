@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent overscroll behavior */
+html {
+    overscroll-behavior: none;
+    overflow: auto;
+    height: 100%;
+}
+
+/* Prevent horizontal overflow */
+body {
+    overflow-x: hidden;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ensure proper responsive behavior */
+* {
+    box-sizing: border-box;
+}
+
 @keyframes fade-in {
     from {
         opacity: 0;
