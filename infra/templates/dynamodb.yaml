@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create a DynamoDB table only.
+
+Resources:
+  UserTokenDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Algo-Trader-User-Token-Table
+      AttributeDefinitions:
+        - AttributeName: USER_ID
+          AttributeType: S
+        - AttributeName: TIMESTAMP
+          AttributeType: S
+      KeySchema:
+        - AttributeName: USER_ID
+          KeyType: HASH
+        - AttributeName: TIMESTAMP
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+#Outputs:
+#  DynamoDBTableName:
+#    Value: !Ref UserTokenDynamoDBTable
+#    Export:
+#      Name: UserTokenDynamoDBTableName
+#
+#  DynamoDBTableArn:
+#    Value: !GetAtt UserTokenDynamoDBTable.Arn
+#    Export:
+#      Name: UserTokenDynamoDBTableArn

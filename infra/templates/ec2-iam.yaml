@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create EC2 IAM role, policy, and instance profile for DynamoDB access.
+
+#Parameters:
+#  UserTokenDynamoDBTableArn:
+#    Type: String
+#    Description: ARN of the DynamoDB table to allow access.
+
+Resources:
+
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: AlgoTraderEC2Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: AlgoTraderDynamoDBPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                Resource: !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Algo-Trader-User-Token-Table"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: AlgoTraderEC2InstanceProfile
+      Roles:
+        - !Ref EC2Role
+
+Outputs:
+  EC2InstanceProfile:
+    Value: !Ref InstanceProfile
+    Export:
+      Name: AlgoTraderInstanceProfile
