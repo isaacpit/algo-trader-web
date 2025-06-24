@@ -2,13 +2,13 @@
 const environments = {
   development: {
     GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-    GOOGLE_REDIRECT_URI: import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost:5173/oauth-callback',
-    API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
+    GOOGLE_REDIRECT_URI: import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'http://localhost:5173/oauth/callback',
+    CALLBACK_SERVER_URL: import.meta.env.VITE_CALLBACK_SERVER_URL || 'http://localhost:3000/api/auth/callback',
   },
   production: {
     GOOGLE_CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-    GOOGLE_REDIRECT_URI: import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'https://algotraders.dev/oauth-callback',
-    API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'https://api.algotraders.dev',
+    GOOGLE_REDIRECT_URI: import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'https://algotraders.dev/oauth/callback',
+    CALLBACK_SERVER_URL: import.meta.env.VITE_CALLBACK_SERVER_URL || 'https://api.algotraders.dev/api/auth/callback',
   }
 };
 
@@ -29,13 +29,13 @@ export const config = environments[currentEnv];
 console.log(`📋 Loaded Configuration:`);
 console.log(`   GOOGLE_CLIENT_ID: ${config.GOOGLE_CLIENT_ID ? '✅ Set' : '❌ Missing'}`);
 console.log(`   GOOGLE_REDIRECT_URI: ${config.GOOGLE_REDIRECT_URI}`);
-console.log(`   API_BASE_URL: ${config.API_BASE_URL}`);
+console.log(`   CALLBACK_SERVER_URL: ${config.CALLBACK_SERVER_URL}`);
 
 // Log environment variables source
 console.log(`🔍 Environment Variables Source:`);
 console.log(`   VITE_GOOGLE_CLIENT_ID: ${import.meta.env.VITE_GOOGLE_CLIENT_ID ? '✅ Present' : '❌ Missing'}`);
 console.log(`   VITE_GOOGLE_REDIRECT_URI: ${import.meta.env.VITE_GOOGLE_REDIRECT_URI || 'Using default'}`);
-console.log(`   VITE_API_BASE_URL: ${import.meta.env.VITE_API_BASE_URL || 'Using default'}`);
+console.log(`   CALLBACK_SERVER_URL: ${import.meta.env.VITE_CALLBACK_SERVER_URL || 'Using default'}`);
 
 // Helper function to get config value
 export const getConfig = (key) => {

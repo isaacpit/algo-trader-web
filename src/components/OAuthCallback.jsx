@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDebug } from '../context/DebugContext';
+import { config } from '../config/environment';
 
 export const OAuthCallback = () => {
   const navigate = useNavigate();
@@ -111,7 +112,7 @@ export const OAuthCallback = () => {
           });
           
           // Send the token to your callback server
-          const response = await fetch(import.meta.env.VITE_CALLBACK_SERVER_URL, {
+          const response = await fetch(config.CALLBACK_SERVER_URL, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
