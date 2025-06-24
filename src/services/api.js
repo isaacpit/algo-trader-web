@@ -1,6 +1,7 @@
 import { API_ENDPOINTS } from '../constants';
+import { config } from '../config/environment';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = config.API_BASE_URL;
 
 const handleResponse = async (response) => {
   if (!response.ok) {
@@ -8,6 +9,14 @@ const handleResponse = async (response) => {
     throw new Error(error.message || 'An error occurred');
   }
   return response.json();
+};
+
+// Helper function to track API calls
+const trackApiCall = (startTime, success = true) => {
+  const loadTime = performance.now() - startTime;
+  if (window.trackApiCall) {
+    window.trackApiCall(loadTime, success);
+  }
 };
 
 const getHeaders = () => {
@@ -25,36 +34,68 @@ const getHeaders = () => {
 
 export const api = {
   async get(endpoint) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      headers: getHeaders(),
-    });
-    return handleResponse(response);
+    const startTime = performance.now();
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: getHeaders(),
+      });
+      const result = await handleResponse(response);
+      trackApiCall(startTime, true);
+      return result;
+    } catch (error) {
+      trackApiCall(startTime, false);
+      throw error;
+    }
   },
 
   async post(endpoint, data) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
+    const startTime = performance.now();
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      const result = await handleResponse(response);
+      trackApiCall(startTime, true);
+      return result;
+    } catch (error) {
+      trackApiCall(startTime, false);
+      throw error;
+    }
   },
 
   async put(endpoint, data) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
+    const startTime = performance.now();
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      const result = await handleResponse(response);
+      trackApiCall(startTime, true);
+      return result;
+    } catch (error) {
+      trackApiCall(startTime, false);
+      throw error;
+    }
   },
 
   async delete(endpoint) {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-    return handleResponse(response);
+    const startTime = performance.now();
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      const result = await handleResponse(response);
+      trackApiCall(startTime, true);
+      return result;
+    } catch (error) {
+      trackApiCall(startTime, false);
+      throw error;
+    }
   },
 };
 
