@@ -254,6 +254,7 @@ async def handle_callback(
         await delete_expired_tokens(user_data["id"])
         
         logger.info(f"Successfully processed callback for user: {user_data['email']}")
+        logger.info(f"User data: {user_data}")
         return UserResponse(**user_data)
         
     except HTTPException:
