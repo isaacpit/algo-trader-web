@@ -79,6 +79,11 @@ jobs:
       - name: Run case sensitivity check
         run: ./check-case-sensitivity.sh
 
+      - name: Run import tests
+        run: |
+          echo "=== Import Path Test ==="
+          node test-imports.js
+
   deploy:
     runs-on: ubuntu-latest
     needs: lint-and-test
