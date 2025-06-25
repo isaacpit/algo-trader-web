@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, master]
 
+# Add explicit permissions for the GITHUB_TOKEN
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
@@ -76,7 +82,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: lint-and-test
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    # enabling deployment directly from branch for now
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout
@@ -122,5 +129,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Alternative: Use Personal Access Token for better permissions
+          # personal_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
           publish_dir: ./dist
           cname: algotraders.dev
