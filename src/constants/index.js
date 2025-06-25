@@ -1,12 +1,12 @@
 // API endpoints
 export const API_ENDPOINTS = {
   AUTH: {
-    CALLBACK: '/api/auth/callback',
-    LOGIN: '/api/auth/login',
-    LOGOUT: '/api/auth/logout',
+    CALLBACK: "/api/auth/callback",
+    LOGIN: "/api/auth/login",
+    LOGOUT: "/api/auth/logout",
   },
   SIGNALS: {
-    LIST: '/api/signals',
+    LIST: "/api/signals",
     DETAIL: (id) => `/api/signals/${id}`,
     BACKTEST: (id) => `/api/signals/${id}/backtest`,
   },
@@ -14,24 +14,26 @@ export const API_ENDPOINTS = {
 
 // Routes
 export const ROUTES = {
-  HOME: '/',
-  DASHBOARD: '/dashboard',
-  SIGNUP: '/signup',
-  OAUTH_CALLBACK: '/oauth/callback',
-  V1: '/v1',
-  V2: '/v2',
+  HOME: "/",
+  DASHBOARD: "/dashboard",
+  SIGNUP: "/signup",
+  OAUTH_CALLBACK: "/oauth/callback",
+  V1: "/v1",
+  V2: "/v2",
+  PROFILE: "/profile",
+  ERROR: "/error",
 };
 
 // Local storage keys
 export const STORAGE_KEYS = {
-  USER: 'user',
-  THEME: 'theme',
-  OAUTH_STATE: 'oauth_state',
+  USER: "user",
+  THEME: "theme",
+  OAUTH_STATE: "oauth_state",
 };
 
 // Chart defaults
 export const CHART_DEFAULTS = {
-  HEIGHT: '300px',
+  HEIGHT: "300px",
   POINT_RADIUS: 0,
   BORDER_WIDTH: 2,
   TENSION: 0.4,
@@ -39,30 +41,30 @@ export const CHART_DEFAULTS = {
 
 // Signal timeframes
 export const TIMEFRAMES = {
-  M1: '1m',
-  M5: '5m',
-  M15: '15m',
-  M30: '30m',
-  H1: '1h',
-  H4: '4h',
-  D1: '1d',
-  W1: '1w',
+  M1: "1m",
+  M5: "5m",
+  M15: "15m",
+  M30: "30m",
+  H1: "1h",
+  H4: "4h",
+  D1: "1d",
+  W1: "1w",
 };
 
 // Asset types
 export const ASSET_TYPES = {
-  CRYPTO: 'crypto',
-  STOCK: 'stock',
-  FOREX: 'forex',
-  COMMODITY: 'commodity',
+  CRYPTO: "crypto",
+  STOCK: "stock",
+  FOREX: "forex",
+  COMMODITY: "commodity",
 };
 
 // Performance metrics
 export const PERFORMANCE_METRICS = {
-  WIN_RATE: 'winRate',
-  PROFIT_FACTOR: 'profitFactor',
-  TOTAL_TRADES: 'totalTrades',
-  SHARPE_RATIO: 'sharpeRatio',
-  MAX_DRAWDOWN: 'maxDrawdown',
-  EXPECTANCY: 'expectancy',
-}; 
+  WIN_RATE: "winRate",
+  PROFIT_FACTOR: "profitFactor",
+  TOTAL_TRADES: "totalTrades",
+  SHARPE_RATIO: "sharpeRatio",
+  MAX_DRAWDOWN: "maxDrawdown",
+  EXPECTANCY: "expectancy",
+};

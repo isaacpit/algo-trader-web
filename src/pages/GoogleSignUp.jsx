@@ -1,8 +1,12 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { GoogleSignIn } from '../components/GoogleSignIn';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { GoogleSignIn } from "../components/GoogleSignIn";
+import { ROUTES } from "../constants";
 
 export const GoogleSignUp = () => {
+  const location = useLocation();
+  const from = location.state?.from?.pathname || ROUTES.DASHBOARD;
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -12,6 +16,11 @@ export const GoogleSignUp = () => {
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
           Sign up to start building your trading algorithms
         </p>
+        {from !== ROUTES.DASHBOARD && (
+          <p className="mt-2 text-center text-sm text-indigo-600 dark:text-indigo-400">
+            You'll be redirected to {from} after signing in
+          </p>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -45,12 +54,18 @@ export const GoogleSignUp = () => {
 
             <div className="text-sm text-center">
               <p className="text-gray-600 dark:text-gray-400">
-                By signing up, you agree to our{' '}
-                <Link to="/terms" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                By signing up, you agree to our{" "}
+                <Link
+                  to="/terms"
+                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
                   Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link to="/privacy" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                </Link>{" "}
+                and{" "}
+                <Link
+                  to="/privacy"
+                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
                   Privacy Policy
                 </Link>
               </p>
@@ -58,8 +73,11 @@ export const GoogleSignUp = () => {
 
             <div className="text-sm text-center">
               <p className="text-gray-600 dark:text-gray-400">
-                Already have an account?{' '}
-                <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                >
                   Sign in
                 </Link>
               </p>
