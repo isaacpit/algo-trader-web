@@ -8,7 +8,12 @@
     "build": "vite build --debug",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "lint": "eslint src --ext .js,.jsx",
+    "test:imports": "node test-imports.js",
+    "test:workflow": "act -j lint-and-test",
+    "test:workflow:debug": "act -vvv -j lint-and-test",
+    "test:case-sensitivity": "./check-case-sensitivity.sh"
   },
   "dependencies": {
     "chart.js": "^4.4.9",

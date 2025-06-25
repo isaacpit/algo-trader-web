@@ -70,6 +70,9 @@ jobs:
             fi
           done
 
+      - name: Run case sensitivity check
+        run: ./check-case-sensitivity.sh
+
   deploy:
     runs-on: ubuntu-latest
     needs: lint-and-test
