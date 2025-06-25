@@ -303,4 +303,4 @@ The `gunicorn.conf.py` file is optimized for production:
 For issues and questions:
 1. Check the logs: `sudo journalctl -u algotraders-callback -f`
 2. Verify configuration: `sudo systemctl status algotraders-callback`
-3. Test endpoints: `curl http://localhost:3000/health` 
+3. Test endpoints: `curl http://localhost:3000/health`
