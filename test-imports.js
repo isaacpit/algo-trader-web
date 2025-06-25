@@ -52,11 +52,12 @@ const tests = [
           "./src/components/layout/PageLayout.jsx",
           "utf8"
         );
+        console.log(content)
         if (!content.includes("import { Navbar }")) {
           throw new Error("Navbar import not found");
         }
 
-        if (!content.includes("from '../Navbar'")) {
+        if (!content.includes('from "../Navbar"')) {
           throw new Error("Navbar import path incorrect");
         }
 
