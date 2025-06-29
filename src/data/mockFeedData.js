@@ -71,7 +71,7 @@ const assets = [
 const timeframes = ['1m', '5m', '15m', '1h', '4h', '1d'];
 
 const generateMockFeedItem = (id) => {
-  console.log(`[MOCK SERVER] Generating feed item ${id}`);
+  // console.log(`[MOCK SERVER] Generating feed item ${id}`);
   const userName = userNames[Math.floor(Math.random() * userNames.length)];
   const strategyName = strategyNames[Math.floor(Math.random() * strategyNames.length)];
   const strategyDesc = strategyDescriptions[Math.floor(Math.random() * strategyDescriptions.length)];
@@ -92,7 +92,7 @@ const generateMockFeedItem = (id) => {
   const volatility = 0.05 + (Math.random() * 0.15);
   const trend = (Math.random() - 0.5) * 0.04; // Slight up or down trend
   
-  console.log(`[MOCK SERVER] Creating chart data for item ${id}: type=${type}, baseValue=${baseValue}, volatility=${volatility}, trend=${trend}`);
+  // console.log(`[MOCK SERVER] Creating chart data for item ${id}: type=${type}, baseValue=${baseValue}, volatility=${volatility}, trend=${trend}`);
   
   const chartData = {
     labels: Array.from({ length: 100 }, (_, i) => i),
@@ -114,12 +114,12 @@ const generateMockFeedItem = (id) => {
     ]
   };
 
-  console.log(`[MOCK SERVER] Chart data created for item ${id}:`, {
-    labelsCount: chartData.labels.length,
-    datasetsCount: chartData.datasets.length,
-    firstDatasetDataCount: chartData.datasets[0].data.length,
-    secondDatasetDataCount: chartData.datasets[1].data.length
-  });
+  // console.log(`[MOCK SERVER] Chart data created for item ${id}:`, {
+  //   labelsCount: chartData.labels.length,
+  //   datasetsCount: chartData.datasets.length,
+  //   firstDatasetDataCount: chartData.datasets[0].data.length,
+  //   secondDatasetDataCount: chartData.datasets[1].data.length
+  // });
 
   // Generate timestamps within the last 30 days
   const now = new Date();
@@ -162,7 +162,7 @@ const generateMockFeedItem = (id) => {
       comments,
       shares
     };
-    console.log(`[MOCK SERVER] Created signal item ${id}:`, { name: item.signal.name, timeframe: item.signal.timeframe });
+    // console.log(`[MOCK SERVER] Created signal item ${id}:`, { name: item.signal.name, timeframe: item.signal.timeframe });
     return item;
   } else {
     const item = {
@@ -196,7 +196,7 @@ const generateMockFeedItem = (id) => {
       comments,
       shares
     };
-    console.log(`[MOCK SERVER] Created backtest item ${id}:`, { name: item.backtest.name, timeframe: item.backtest.timeframe });
+    // console.log(`[MOCK SERVER] Created backtest item ${id}:`, { name: item.backtest.name, timeframe: item.backtest.timeframe });
     return item;
   }
 };
