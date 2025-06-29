@@ -28,7 +28,7 @@ async def test_backtest_job_system():
     initialize_database(
         user_table_name="test_users",
         feed_table_name="test_feed",
-        feed_table_name="test_backtest_jobs",
+        backtest_jobs_table_name="test_backtest_jobs",
         region="us-east-1",
         use_localstack=True,
         localstack_endpoint="http://localhost:4566"
