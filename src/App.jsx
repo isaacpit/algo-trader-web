@@ -12,6 +12,7 @@ import { ErrorPage } from "./pages/ErrorPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ROUTES } from "./constants";
 import { Profile } from "./pages/Profile";
+import { BacktestJobsPage } from "./pages/BacktestJobs";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
 export const App = () => {
@@ -40,6 +41,14 @@ export const App = () => {
                 element={
                   <ProtectedRoute>
                     <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={ROUTES.BACKTEST_JOBS}
+                element={
+                  <ProtectedRoute>
+                    <BacktestJobsPage />
                   </ProtectedRoute>
                 }
               />

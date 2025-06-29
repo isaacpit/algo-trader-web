@@ -1,40 +1,96 @@
-version: '3.8'
-
 services:
+  # LocalStack for local AWS services
+  localstack:
+    image: localstack/localstack:latest
+    container_name: algotraders-localstack
+    ports:
+      - "4566:4566" # LocalStack main port
+      - "4510-4559:4510-4559" # External service port range
+    environment:
+      - SERVICES=dynamodb,sns,sqs,lambda,cloudwatch
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+      - LAMBDA_EXECUTOR=docker
+      - LAMBDA_REMOTE_DOCKER=false
+      - DYNAMODB_IN_MEMORY=true
+      - DYNAMODB_SHARE_DB=1
+      # Enhanced logging configuration
+      - LS_LOG=trace
+      # - LOG_LEVEL=debug
+      # - ENABLE_DEBUG_LOGGING=1
+      # - DEBUG_PERSISTENCE=1
+      # - PERSISTENCE=1
+      - LS_LOG_LEVEL=trace
+      # - LOCALSTACK_API_KEY=test
+      # - ENABLE_LEGACY_PORTS=1
+      # # DynamoDB specific logging
+      # - DYNAMODB_DEBUG=1
+      # - DYNAMODB_LOG_LEVEL=debug
+      # # Request/Response logging
+      # - ENABLE_REQUEST_LOGGING=1
+      # - ENABLE_RESPONSE_LOGGING=1
+      # - LOG_REQUEST_BODY=1
+      # - LOG_RESPONSE_BODY=1
+      # # Additional debugging
+      # - ENABLE_DEBUG_LOGGING=1
+      # - DEBUG_PERSISTENCE=1
+      # - PERSISTENCE=1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - algotraders-network
+
+  # Callback server
   callback-server:
     build: .
+    container_name: algotraders-callback-server
     ports:
       - "3000:3000"
     environment:
       - HOST=0.0.0.0
       - PORT=3000
-      - DEBUG=false
-      - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-change-this-in-production}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,https://algotraders.dev}
-      - TRUSTED_HOSTS=${TRUSTED_HOSTS:-*,localhost,algotraders.dev}
+      - DEBUG=true
+      - SECRET_KEY=dev-secret-key-change-in-production
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - TRUSTED_HOSTS=*
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - DATABASE_URL=${DATABASE_URL}
-      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
-      - RATE_LIMIT_WINDOW=${RATE_LIMIT_WINDOW:-3600}
+      - AWS_REGION=us-east-1
+      - DYNAMODB_TABLE_NAME=Algo-Trader-User-Token-Table
+      - USE_LOCALSTACK=true
+      - LOCALSTACK_ENDPOINT=http://localstack:4566
+      - RATE_LIMIT_REQUESTS=1000
+      - RATE_LIMIT_WINDOW=3600
     volumes:
       - ./logs:/app/logs
+      - ./data:/app/data
+    depends_on:
+      - localstack
+    networks:
+      - algotraders-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
-  # Optional: Add Redis for better rate limiting in production
-  # redis:
-  #   image: redis:7-alpine
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   restart: unless-stopped
+  # Optional: DynamoDB Admin UI for local development
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    container_name: algotraders-dynamodb-admin
+    ports:
+      - "8001:8001"
+    environment:
+      - DYNAMO_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - localstack
+    networks:
+      - algotraders-network
+
+networks:
+  algotraders-network:
+    driver: bridge
 
 volumes:
-  redis_data: 
+  localstack_data:

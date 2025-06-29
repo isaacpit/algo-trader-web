@@ -6,8 +6,9 @@ import os
 bind = f"0.0.0.0:{os.getenv('PORT', '3000')}"
 backlog = 2048
 
-# Worker processes
+# Worker processes - reduce for development to prevent race conditions
 workers = multiprocessing.cpu_count() * 2 + 1
+# workers = 2  # Reduced from multiprocessing.cpu_count() * 2 + 1
 worker_class = "uvicorn.workers.UvicornWorker"
 worker_connections = 1000
 max_requests = 1000
@@ -48,4 +49,4 @@ max_requests = 1000
 max_requests_jitter = 50
 
 # Worker timeout
-graceful_timeout = 30 
+graceful_timeout = 30

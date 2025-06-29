@@ -10,6 +10,12 @@ export const API_ENDPOINTS = {
     DETAIL: (id) => `/api/signals/${id}`,
     BACKTEST: (id) => `/api/signals/${id}/backtest`,
   },
+  BACKTEST_JOBS: {
+    CREATE: "/api/backtest-jobs",
+    GET: (id) => `/api/backtest-jobs/${id}`,
+    GET_USER: (userId) => `/api/backtest-jobs/user/${userId}`,
+    CANCEL: (id) => `/api/backtest-jobs/${id}`,
+  },
 };
 
 // Routes
@@ -21,6 +27,7 @@ export const ROUTES = {
   V1: "/v1",
   V2: "/v2",
   PROFILE: "/profile",
+  BACKTEST_JOBS: "/backtest-jobs",
   ERROR: "/error",
 };
 

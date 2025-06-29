@@ -5,6 +5,7 @@ import { DashboardSidebar } from "../components/DashboardSidebar";
 import { Feed } from "../components/Feed";
 import { MySignals } from "../components/MySignals";
 import { SignalCreation } from "../components/SignalCreation";
+import { BacktestJobsView } from "../components/BacktestJobsView";
 import { FaSignOutAlt } from "react-icons/fa";
 
 export const Dashboard = () => {
@@ -38,6 +39,8 @@ export const Dashboard = () => {
         return <MySignals />;
       case "create":
         return <SignalCreation />;
+      case "backtest-jobs":
+        return <BacktestJobsView userId={user?.id} />;
       default:
         return <Feed />;
     }

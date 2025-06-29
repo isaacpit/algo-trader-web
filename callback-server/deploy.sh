@@ -67,7 +67,9 @@ if [[ "$PACKAGE_MANAGER" == "yum" ]]; then
         nginx \
         git \
         certbot \
-        python3-certbot-nginx
+        python3-certbot-nginx \
+        docker \
+        docker-compose-plugin
     # [REMOVED] supervisor \
 #            curl \
 else
@@ -80,7 +82,9 @@ else
         git \
         supervisor \
         certbot \
-        python3-certbot-nginx
+        python3-certbot-nginx \
+        docker \
+        docker-compose-plugin
 fi
 
 # Create application directory

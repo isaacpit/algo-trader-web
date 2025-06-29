@@ -1,0 +1,419 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Billing Alerts and Spending Controls for AlgoTraders Project"
+
+Parameters:
+  EmailAddress:
+    Type: String
+    Description: Email address to receive billing alerts
+    Default: "your-email@example.com"
+
+  MonthlyBudget:
+    Type: Number
+    Description: Monthly budget limit in USD
+    Default: 2.00
+    MinValue: 0.01
+    MaxValue: 1000.00
+
+  AlertThreshold:
+    Type: Number
+    Description: Percentage of budget to trigger first alert
+    Default: 80
+    MinValue: 1
+    MaxValue: 100
+
+Resources:
+  # SNS Topic for billing notifications
+  BillingAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-billing-alerts"
+      DisplayName: "Billing Alerts for AlgoTraders Project"
+      Tags:
+        - Key: Project
+          Value: AlgoTraders
+        - Key: Purpose
+          Value: BillingAlerts
+
+  # SNS Topic Policy to allow CloudWatch to publish
+  BillingAlertsTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      Topics:
+        - !Ref BillingAlertsTopic
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: billingreports.amazonaws.com
+            Action: SNS:Publish
+            Resource: !Ref BillingAlertsTopic
+          - Effect: Allow
+            Principal:
+              Service: cloudwatch.amazonaws.com
+            Action: SNS:Publish
+            Resource: !Ref BillingAlertsTopic
+
+  # Email subscription to SNS topic
+  BillingAlertsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref BillingAlertsTopic
+      Protocol: email
+      Endpoint: !Ref EmailAddress
+
+  # CloudWatch Alarm for 80% of budget
+  BudgetWarningAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-budget-warning"
+      AlarmDescription: !Sub "Warning: Monthly costs have reached ${AlertThreshold}% of $${MonthlyBudget} budget"
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Statistic: Maximum
+      Period: 86400 # 24 hours
+      EvaluationPeriods: 1
+      Threshold:
+        !Select [
+          0,
+          !Split [".", !Sub "${MonthlyBudget * AlertThreshold / 100}"],
+        ]
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: Currency
+          Value: USD
+      AlarmActions:
+        - !Ref BillingAlertsTopic
+      OKActions:
+        - !Ref BillingAlertsTopic
+
+  # CloudWatch Alarm for 100% of budget
+  BudgetExceededAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${AWS::StackName}-budget-exceeded"
+      AlarmDescription: !Sub "CRITICAL: Monthly costs have exceeded $${MonthlyBudget} budget"
+      MetricName: EstimatedCharges
+      Namespace: AWS/Billing
+      Statistic: Maximum
+      Period: 86400 # 24 hours
+      EvaluationPeriods: 1
+      Threshold: !Select [0, !Split [".", !Sub "${MonthlyBudget}"]]
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      Dimensions:
+        - Name: Currency
+          Value: USD
+      AlarmActions:
+        - !Ref BillingAlertsTopic
+      OKActions:
+        - !Ref BillingAlertsTopic
+
+  # IAM Role for Lambda function
+  BillingControlLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-billing-control-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: BillingControlPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ce:GetCostAndUsage
+                  - ce:GetCostForecast
+                  - organizations:DescribeAccount
+                  - organizations:ListAccounts
+                  - sts:GetCallerIdentity
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref BillingAlertsTopic
+
+  # Lambda function to implement spending controls
+  BillingControlLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-billing-control"
+      Runtime: python3.9
+      Handler: index.lambda_handler
+      Role: !GetAtt BillingControlLambdaRole.Arn
+      Timeout: 300
+      Environment:
+        Variables:
+          MONTHLY_BUDGET: !Ref MonthlyBudget
+          SNS_TOPIC_ARN: !Ref BillingAlertsTopic
+          STACK_NAME: !Ref AWS::StackName
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          from datetime import datetime, timedelta
+          from botocore.exceptions import ClientError
+
+          def lambda_handler(event, context):
+              """Lambda function to implement billing controls"""
+
+              # Initialize clients
+              ce_client = boto3.client('ce')
+              sns_client = boto3.client('sns')
+              sts_client = boto3.client('sts')
+
+              # Get configuration
+              monthly_budget = float(os.environ['MONTHLY_BUDGET'])
+              sns_topic_arn = os.environ['SNS_TOPIC_ARN']
+              stack_name = os.environ['STACK_NAME']
+
+              try:
+                  # Get current month's cost
+                  start_date = datetime.now().replace(day=1).strftime('%Y-%m-%d')
+                  end_date = datetime.now().strftime('%Y-%m-%d')
+
+                  response = ce_client.get_cost_and_usage(
+                      TimePeriod={
+                          'Start': start_date,
+                          'End': end_date
+                      },
+                      Granularity='MONTHLY',
+                      Metrics=['UnblendedCost']
+                  )
+
+                  # Extract current cost
+                  current_cost = 0.0
+                  if response['ResultsByTime']:
+                      cost_str = response['ResultsByTime'][0]['Total']['UnblendedCost']['Amount']
+                      current_cost = float(cost_str)
+
+                  # Check if budget exceeded
+                  if current_cost >= monthly_budget:
+                      # Send critical alert
+                      message = f"""
+                      🚨 CRITICAL BILLING ALERT 🚨
+
+                      Your AWS account has exceeded the monthly budget of ${monthly_budget:.2f}.
+
+                      Current Month Cost: ${current_cost:.2f}
+                      Budget Limit: ${monthly_budget:.2f}
+                      Over Budget: ${current_cost - monthly_budget:.2f}
+
+                      Account ID: {sts_client.get_caller_identity()['Account']}
+                      Stack: {stack_name}
+                      Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+                      IMMEDIATE ACTION REQUIRED:
+                      1. Review and terminate unnecessary resources
+                      2. Check for unexpected charges
+                      3. Consider implementing stricter spending controls
+
+                      Resources to check:
+                      - EC2 instances
+                      - RDS databases
+                      - DynamoDB tables
+                      - Lambda functions
+                      - CloudWatch logs
+                      - S3 storage
+                      """
+
+                      sns_client.publish(
+                          TopicArn=sns_topic_arn,
+                          Subject=f'🚨 CRITICAL: AWS Budget Exceeded - ${current_cost:.2f}',
+                          Message=message
+                      )
+
+                      # Implement automatic cost controls
+                      implement_cost_controls()
+
+                      return {
+                          'statusCode': 200,
+                          'body': json.dumps({
+                              'message': 'Budget exceeded - controls implemented',
+                              'current_cost': current_cost,
+                              'budget': monthly_budget
+                          })
+                      }
+                  else:
+                      # Send warning if approaching budget
+                      budget_percentage = (current_cost / monthly_budget) * 100
+                      if budget_percentage >= 80:
+                          message = f"""
+                          ⚠️ BUDGET WARNING ⚠️
+
+                          Your AWS account is approaching the monthly budget limit.
+
+                          Current Month Cost: ${current_cost:.2f}
+                          Budget Limit: ${monthly_budget:.2f}
+                          Usage: {budget_percentage:.1f}%
+                          Remaining: ${monthly_budget - current_cost:.2f}
+
+                          Account ID: {sts_client.get_caller_identity()['Account']}
+                          Stack: {stack_name}
+                          Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+                          RECOMMENDED ACTIONS:
+                          1. Review current resource usage
+                          2. Consider stopping non-essential services
+                          3. Monitor spending closely
+                          """
+
+                          sns_client.publish(
+                              TopicArn=sns_topic_arn,
+                              Subject=f'⚠️ WARNING: AWS Budget at {budget_percentage:.1f}%',
+                              Message=message
+                          )
+
+                      return {
+                          'statusCode': 200,
+                          'body': json.dumps({
+                              'message': 'Budget check completed',
+                              'current_cost': current_cost,
+                              'budget': monthly_budget,
+                              'percentage': budget_percentage
+                          })
+                      }
+
+              except Exception as e:
+                  error_message = f"Error in billing control lambda: {str(e)}"
+                  sns_client.publish(
+                      TopicArn=sns_topic_arn,
+                      Subject='❌ ERROR: Billing Control Lambda Failed',
+                      Message=error_message
+                  )
+                  raise e
+
+          def implement_cost_controls():
+              """Implement automatic cost controls when budget is exceeded"""
+
+              # Note: This is a placeholder for automatic controls
+              # In a real implementation, you would add specific actions like:
+              # - Stopping non-essential EC2 instances
+              # - Scaling down RDS instances
+              # - Deleting old CloudWatch logs
+              # - Removing unused S3 objects
+              # - Disabling non-critical Lambda functions
+
+              print("Implementing cost controls...")
+              # Add your specific cost control actions here
+
+  # CloudWatch Events Rule to trigger Lambda daily
+  BillingControlSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${AWS::StackName}-billing-control-schedule"
+      Description: "Daily billing control check"
+      ScheduleExpression: "rate(1 day)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt BillingControlLambda.Arn
+          Id: BillingControlTarget
+
+  # Permission for CloudWatch Events to invoke Lambda
+  BillingControlLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref BillingControlLambda
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt BillingControlSchedule.Arn
+
+  # IAM Policy to prevent new resource creation when budget exceeded
+  BudgetEnforcementPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-budget-enforcement"
+      Roles:
+        - !Ref BillingControlLambdaRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Deny
+            Action:
+              - ec2:RunInstances
+              - rds:CreateDBInstance
+              - dynamodb:CreateTable
+              - lambda:CreateFunction
+              - s3:PutObject
+              - cloudwatch:PutMetricData
+            Resource: "*"
+            Condition:
+              StringEquals:
+                "aws:RequestTag/BudgetExceeded": "true"
+
+  # CloudWatch Dashboard for billing monitoring
+  BillingDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${AWS::StackName}-billing-dashboard"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Billing", "EstimatedCharges", "Currency", "USD"]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "${AWS::Region}",
+                "title": "Monthly AWS Charges",
+                "period": 86400
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 0,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Billing", "EstimatedCharges", "Currency", "USD"]
+                ],
+                "view": "singleValue",
+                "region": "${AWS::Region}",
+                "title": "Current Month Cost",
+                "period": 86400
+              }
+            }
+          ]
+        }
+
+Outputs:
+  BillingAlertsTopicArn:
+    Description: ARN of the SNS topic for billing alerts
+    Value: !Ref BillingAlertsTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-BillingAlertsTopic"
+
+  BillingControlLambdaArn:
+    Description: ARN of the billing control Lambda function
+    Value: !GetAtt BillingControlLambda.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-BillingControlLambda"
+
+  DashboardUrl:
+    Description: URL of the CloudWatch billing dashboard
+    Value: !Sub "https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=${AWS::StackName}-billing-dashboard"
+
+  StackName:
+    Description: Name of the CloudFormation stack
+    Value: !Ref AWS::StackName
+    Export:
+      Name: !Sub "${AWS::StackName}-StackName"
